@@ -134,12 +134,14 @@ class AzureContainerInstancesOperator(BaseOperator):
             self.log.info("Starting container group with %.1f cpu %.1f mem",
                           self.cpu, self.memory_in_gb)
 
-            resources = ResourceRequirements(ResourceRequests(
-                self.memory_in_gb,
-                self.cpu))
+            resources = ResourceRequirements(requests=ResourceRequests(
+                memory_in_gb=self.memory_in_gb,
+                cpu=self.cpu))
 
             container = Container(
-                self.name, self.image, resources,
+                name=self.name,
+                image=self.image,
+                resources=resources,
                 environment_variables=environment_variables,
                 volume_mounts=volume_mounts)
 

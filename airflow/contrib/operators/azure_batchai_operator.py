@@ -18,8 +18,6 @@
 # under the License.
 #
 
-import os
-
 from time import sleep
 
 from airflow.contrib.hooks.azure_batchai_hook import (AzureBatchAIHook)
@@ -27,16 +25,7 @@ from airflow.contrib.hooks.azure_batchai_hook import (AzureBatchAIHook)
 from airflow.exceptions import AirflowException, AirflowTaskTimeout
 from airflow.models import BaseOperator
 
-from azure.mgmt.resource import ResourceManagementClient
-
-from azure.common.client_factory import get_client_from_auth_file
-
 from azure.mgmt.batchai.models import (ClusterCreateParameters,
-                                       ManualScaleSettings,
-                                       AutoScaleSettings,
-                                       ScaleSettings,
-                                       VirtualMachineConfiguration,
-                                       ImageReference,
                                        UserAccountSettings)
 
 from msrestazure.azure_exceptions import CloudError
@@ -61,7 +50,7 @@ class AzureBatchAIOperator(BaseOperator):
     :param scale_type: either "manual" or "auto" based on desired scale settings
     :type scale_type: str
     :param: environment_variables: key,value pairs containing environment variables
-        which will be passed to the running container, including selected username and password
+        which will be passed to the running cluster, must include username and password
     :type: environment_variables: dict
     :param: volumes: list of volumes to be mounted to the cluster.
         Currently only Azure Fileshares are supported.
@@ -81,6 +70,7 @@ class AzureBatchAIOperator(BaseOperator):
                 'my-workspace-name-{{ ds }}',
                 'my-cluster-name',
                 'westeurope',
+                'auto_scale',
                 {'USERNAME': '{{ ds }}',
                  'PASSWORD': '{{ ds }}},
                 task_id='start_container'
@@ -110,35 +100,37 @@ class AzureBatchAIOperator(BaseOperator):
     def execute(self):
         batch_ai_hook = AzureBatchAIHook(self.bai_conn_id)
 
-        resource_client = get_client_from_auth_file(ResourceManagementClient)
-        resource_group_params = {'location': self.location}
-        resource_client.resource_groups.create_or_update(self.resource_group, resource_group_params)
-
         try:
-            self.log.info("Starting Batch AI cluster with offer %d and sku %d mem",
+            self.log.info("Starting Batch AI cluster with offer %s and sku %s",
                           self.offer, self.sku)
 
-            auto_scale_settings = AutoScaleSettings(minimum_node_count=0,
-                                                    maximum_node_count=10,
-                                                    initial_node_count=0)
+            username = self.environment_variables['USERNAME']
+            password = self.environment_variables['PASSWORD']
 
-            manual_scale_settings = ManualScaleSettings(target_node_count=0,
-                                                        node_deallocation_option='requeue')
+            user_account_settings = UserAccountSettings(
+                admin_user_name=username,
+                admin_user_password=password)
 
-            if self.scale_type == 'manual':
-                scale_settings = ScaleSettings(manual=manual_scale_settings)
-            else:
-                scale_settings = ScaleSettings(auto_scale=auto_scale_settings)
+            
+            auto_scale_settings = AutoScaleSettings(
+                minimum_node_count=0,
+                maximum_node_count=10,
+                initial_node_count=0)
 
-            image_reference = ImageReference(publisher=self.publisher,
-                                             offer=self.offer,
-                                             sku=self.sku,
-                                             version=self.version)
+            scale_settings = ScaleSettings(
+                auto_scale=auto_scale_settings)
 
-            vm_configuration = VirtualMachineConfiguration(image_reference=image_reference)
+            image_reference = ImageReference(
+                publisher=self.publisher,
+                offer=self.offer,
+                sku=self.sku,
+                version=self.version)
 
-            username = os.environ['USERNAME']
-            password = os.environ['PASSWORD']
+            vm_configuration = VirtualMachineConfiguration(
+                image_reference=image_reference)
+
+            username=os.environ['USERNAME'],
+            password=os.environ['PASSWORD']
 
             user_account_settings = UserAccountSettings(
                 admin_user_name=username,
@@ -171,10 +163,13 @@ class AzureBatchAIOperator(BaseOperator):
 
             parameters = ClusterCreateParameters(
                 vm_size='STANDARD_NC6',
+                user_account_settings=user_account_settings,
+                location=self.location,
                 vm_priority='dedicated',
-                scale_settings=scale_settings,
-                virtual_machine_configuration=vm_configuration,
-                user_account_settings=user_account_settings)
+                scale_settings=None,
+                virtual_machine_configuration=None,
+                node_setup=None,
+                subnet=None)
 
             batch_ai_hook.create(self.resource_group,
                                  self.workspace_name,
@@ -194,7 +189,7 @@ class AzureBatchAIOperator(BaseOperator):
             raise AirflowException("Could not start batch ai cluster")
 
         finally:
-            self.log.info("Deleting batch ai cluster")
+            self.log.info("Deleting Batch AI cluster")
             try:
                 batch_ai_hook.delete(self.resource_group, self.workspace_name, self.cluster_name)
             except Exception:

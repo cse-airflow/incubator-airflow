@@ -18,11 +18,9 @@
 # under the License.
 
 import airflow
-from airflow.operators.python_operator import BranchPythonOperator
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.contrib.operators.azure_batchai_operator import AzureBatchAIOperator
 from airflow.models import DAG
-import random
 
 
 args = {
@@ -31,7 +29,7 @@ args = {
 }
 
 dag = DAG(
-    dag_id='example_batchai_dag',
+    dag_id='example_batchai_operator',
     default_args=args,
     schedule_interval="@daily")
 
@@ -46,14 +44,10 @@ batch_ai_node = AzureBatchAIOperator(
     task_id='run_this_first',
     dag=dag)
 
-branching = BranchPythonOperator(
-    task_id='branching',
-    python_callable=lambda: random.choice(options),
-    dag=dag)
-branching.set_upstream(batch_ai_node)
-
-join = DummyOperator(
+dummy = DummyOperator(
     task_id='join',
     trigger_rule='one_success',
     dag=dag
 )
+
+dummy.set_upstream(batch_ai_node)

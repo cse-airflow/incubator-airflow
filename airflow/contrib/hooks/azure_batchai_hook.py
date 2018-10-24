@@ -48,7 +48,7 @@ class AzureBatchAIHook(BaseHook):
                                                  key_path)
             else:
                 raise AirflowException('Unrecognised extension for key file.')
-         credentials = ServicePrincipalCredentials(
+        credentials = ServicePrincipalCredentials(
             client_id=conn.login,
             secret=conn.password,
             tenant=conn.extra_dejson['tenantId']
@@ -56,3 +56,28 @@ class AzureBatchAIHook(BaseHook):
     
     subscription_id = conn.extra_dejson['subscriptionId']
     return BatchServiceClient(credentials, str(subscription_id))
+
+    def create_or_update(self, resource_group, name, container_group):
+        self.connection.container_groups.create_or_update(resource_group,
+                                                          name,
+                                                          container_group)
+     def get_state_exitcode(self, resource_group, name):
+        response = self.connection.container_groups.get(resource_group,
+                                                        name,
+                                                        raw=True).response.json()
+        containers = response['properties']['containers']
+        instance_view = containers[0]['properties'].get('instanceView', {})
+        current_state = instance_view.get('currentState', {})
+         return current_state.get('state'), current_state.get('exitCode', 0)
+     def get_messages(self, resource_group, name):
+        response = self.connection.container_groups.get(resource_group,
+                                                        name,
+                                                        raw=True).response.json()
+        containers = response['properties']['containers']
+        instance_view = containers[0]['properties'].get('instanceView', {})
+         return [event['message'] for event in instance_view.get('events', [])]
+     def get_logs(self, resource_group, name, tail=1000):
+        logs = self.connection.container_logs.list(resource_group, name, name, tail=tail)
+        return logs.content.splitlines(True)
+     def delete(self, resource_group, name):
+        self.connection.container_groups.delete(resource_group, name)

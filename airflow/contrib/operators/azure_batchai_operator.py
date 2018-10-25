@@ -19,19 +19,22 @@
 #
 
 from time import sleep
- from airflow.contrib.hooks.azure_container_hook import (AzureContainerInstanceHook,
-                                                        AzureContainerRegistryHook,
-                                                        AzureContainerVolumeHook)
+
+from airflow.contrib.hooks.azure_batchai_hook import (AzureBatchAIHook)
+                                                        # AzureContainerRegistryHook,
+                                                        # AzureContainerVolumeHook)
 from airflow.exceptions import AirflowException, AirflowTaskTimeout
 from airflow.models import BaseOperator
- from azure.mgmt.containerinstance.models import (EnvironmentVariable,
+
+from azure.mgmt.containerinstance.models import (EnvironmentVariable,
                                                  VolumeMount,
                                                  ResourceRequests,
                                                  ResourceRequirements,
                                                  Container,
                                                  ContainerGroup)
 from msrestazure.azure_exceptions import CloudError
- class AzureContainerInstancesOperator(BaseOperator):
+
+class AzureBatchAIOperator(BaseOperator):
     """
     Start a cluster on Azure Batch AI
      :param ci_conn_id: connection id of a service principal which will be used
@@ -43,8 +46,7 @@ from msrestazure.azure_exceptions import CloudError
     :param resource_group: name of the resource group wherein this container
         instance should be started
     :type resource_group: str
-    :param name: name of this container instance. Please note this name has
-        to be unique in order to run containers in parallel.
+    :param name: name of the batch ai cluster
     :type name: str
     :param image: the docker image to be used
     :type image: str
@@ -79,3 +81,23 @@ from msrestazure.azure_exceptions import CloudError
                 task_id='start_container'
             )
     """
+
+    template_fields = ('name', 'environment_variables')
+    template_ext = tuple()
+     def __init__(self, ci_conn_id, registry_conn_id, resource_group, name, image, region,
+                 environment_variables={}, volumes=[], memory_in_gb=2.0, cpu=1.0,
+                 *args, **kwargs):
+        self.ci_conn_id = ci_conn_id
+        self.resource_group = resource_group
+        self.name = name
+        self.image = image
+        self.region = region
+        self.registry_conn_id = registry_conn_id
+        self.environment_variables = environment_variables
+        self.volumes = volumes
+        self.memory_in_gb = memory_in_gb
+        self.cpu = cpu
+         super(AzureContainerInstancesOperator, self).__init__(*args, **kwargs)
+
+     def execute(self, context):
+        batch_ai_hook = AzureBatchAIHook(self.ci_conn_id)

@@ -37,9 +37,9 @@ from msrestazure.azure_exceptions import CloudError
 class AzureBatchAIOperator(BaseOperator):
     """
     Start a cluster on Azure Batch AI
-     :param ci_conn_id: connection id of a service principal which will be used
-        to start the cluster
-    :type ci_conn_id: str
+    :param bai_conn_id: connection id of a service principal which will be used
+        to start the batch ai cluster
+    :type bai_conn_id: str
     :param registry_conn_id: connection id of a user which can login to a
         private docker registry. If None, we assume a public registry
     :type registry_conn_id: str
@@ -84,20 +84,20 @@ class AzureBatchAIOperator(BaseOperator):
 
     template_fields = ('name', 'environment_variables')
     template_ext = tuple()
-     def __init__(self, ci_conn_id, registry_conn_id, resource_group, name, image, region,
-                 environment_variables={}, volumes=[], memory_in_gb=2.0, cpu=1.0,
-                 *args, **kwargs):
-        self.ci_conn_id = ci_conn_id
+    def __init__(self, bai_conn_id, registry_conn_id, resource_group, name, image, region,
+                environment_variables={}, volumes=[], memory_in_gb=2.0, cpu=1.0,
+                *args, **kwargs):
+        self.bai_conn_id = bai_conn_id
+        self.registry_conn_id = registry_conn_id
         self.resource_group = resource_group
         self.name = name
         self.image = image
         self.region = region
-        self.registry_conn_id = registry_conn_id
         self.environment_variables = environment_variables
         self.volumes = volumes
         self.memory_in_gb = memory_in_gb
         self.cpu = cpu
-         super(AzureContainerInstancesOperator, self).__init__(*args, **kwargs)
+        super(AzureBatchAIOperator, self).__init__(*args, **kwargs)
 
-     def execute(self, context):
+    def execute(self, context):
         batch_ai_hook = AzureBatchAIHook(self.ci_conn_id)

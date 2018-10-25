@@ -20,7 +20,7 @@
 import airflow
 from airflow.operators.python_operator import BranchPythonOperator
 from airflow.operators.dummy_operator import DummyOperator
-from airflow.contrib.operators.azure_batchai_operator import AzureBatchAIOperator
+from airflow.contrib.azure_batchai_operator import AzureBatchAIOperator
 from airflow.models import DAG
 import random
 
@@ -36,20 +36,7 @@ dag = DAG(
     schedule_interval="@daily")
 
 cmd = 'ls -l'
-run_this_first = AzureBatchAIOperator(
-    'azure_batchai_default',  #TODO: add this to utils
-    None,  # Registry connection
-    'batch-ai-test-rg',
-    'batch-ai-cluster',
-    'image-name',
-    'WestUS2',
-    environment_variables={},
-    volumes=[],
-    memory_in_gb=2.0,
-    cpu=1.0,
-    task_id='run_this_first',
-    dag=dag
-    )
+run_this_first = AzureBatchAIOperator(task_id='run_this_first', dag=dag)
 
 options = ['branch_a', 'branch_b']
 

@@ -25,8 +25,8 @@ from azure.batch import BatchServiceClient
 
 class AzureBatchAIHook(BaseHook):
 
-    def __init__(self, conn_id='azure_default'):
-        self.conn_id = conn_id
+    def __init__(self, azure_batchai_conn_id='azure_batchai_default'):
+        self.conn_id = azure_batchai_conn_id
         self.connection = self.get_conn()
 
     def get_conn(self):

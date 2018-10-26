@@ -63,7 +63,7 @@ class AzureBatchAIOperator(BaseOperator):
     :param: cpu: the number of cpus to allocate to this container
     :type: cpu: double
      :Example:
-     >>>  a = AzureContainerInstancesOperator(
+     >>>  a = AzureBatchAIOperator(
                 'azure_service_principal',
                 'azure_registry_user',
                 'my-resource-group',
@@ -100,4 +100,4 @@ class AzureBatchAIOperator(BaseOperator):
         super(AzureBatchAIOperator, self).__init__(*args, **kwargs)
 
     def execute(self, context):
-        batch_ai_hook = AzureBatchAIHook(self.ci_conn_id)
+        batch_ai_hook = AzureBatchAIHook(self.bai_conn_id)

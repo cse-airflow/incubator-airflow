@@ -88,7 +88,7 @@ class AzureContainerInstanceHook(BaseHook):
         return [event['message'] for event in instance_view.get('events', [])]
 
     def get_logs(self, resource_group, name, tail=1000):
-        logs = self.connection.container_logs.list(resource_group, name, name, tail=tail)
+        logs = self.connection.container.list_logs(resource_group, name, name, tail=tail)
         return logs.content.splitlines(True)
 
     def delete(self, resource_group, name):

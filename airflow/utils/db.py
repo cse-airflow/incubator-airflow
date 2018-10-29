@@ -279,6 +279,10 @@ def initdb(rbac=False):
             extra='{"tenant": "<TENANT>", "account_name": "<ACCOUNTNAME>" }'))
     merge_conn(
         models.Connection(
+            conn_id='azure_cosmos_default', conn_type='azure_cosmos',
+            extra='{"tenant": "<TENANT>", "account_name": "<ACCOUNTNAME>" }'))
+    merge_conn(
+        models.Connection(
             conn_id='cassandra_default', conn_type='cassandra',
             host='cassandra', port=9042))
 

@@ -151,7 +151,7 @@ azure_data_lake = [
     'azure-mgmt-datalake-store==0.4.0',
     'azure-datalake-store==0.0.19'
 ]
-azure_cosmos = ['pydocumentdb>=2.3.3']
+azure_cosmos = ['azure-cosmos>=3.0.1']
 cassandra = ['cassandra-driver>=3.13.0']
 celery = [
     'celery>=4.1.1, <4.2.0',

@@ -16,9 +16,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-# import pydocumentdb
-import pydocumentdb.document_client as document_client
+import azure.cosmos.cosmos_client as cosmos_client
 import uuid
+
 from airflow.exceptions import AirflowBadRequest
 from airflow.hooks.base_hook import BaseHook
 
@@ -39,13 +39,12 @@ class AzureCosmosDBHook(BaseHook):
         self.conn_id = azure_cosmos_conn_id
         self.connection = self.get_connection(self.conn_id)
         self.extras = self.connection.extra_dejson
-        self.azure_database = None
-        self.database_collection = None
+        self.cosmos_client = None
 
     def get_conn(self):
         """Return a cosmos db collection."""
-        if self.database_collection is not None:
-            return self.database_collection
+        if self.cosmos_client is not None:
+            return self.cosmos_client
 
         conn = self.get_connection(self.conn_id)
         service_options = conn.extra_dejson
@@ -67,59 +66,62 @@ class AzureCosmosDBHook(BaseHook):
             raise AirflowBadRequest("Collection name cannot be None")
 
         # Initialize the Python Azure Cosmos DB client
-        self.cosmos_client = document_client.DocumentClient(self.endpoint_uri, {'masterKey': self.master_key})
-        # Create the database
-        self.azure_database = self.cosmos_client.CreateDatabase({'id': self.database_name})
+        self.cosmos_client = cosmos_client.CosmosClient(self.endpoint_uri, {'masterKey': self.master_key})
 
-        # Create collection options
-        # todo: Allow these to be configurable?
-        options = {
-            'offerEnableRUPerMinuteThroughput': True,
-            'offerVersion': "V2",
-            'offerThroughput': 400
-        }
-
-        # Create a collection
-        self.database_collection = self.cosmos_client.CreateCollection(
-            self.azure_database['_self'],
-            {'id': self.collection_name},
-            options)
-
-        return self.database_collection
+        return self.cosmos_client
 
     def insert_document(self, document, document_id=None):
         # Assign unique ID if one isn't provided
         if document_id is None:
             document_id = uuid.uuid4()
 
-        if self.database_collection is None:
+        if self.collection_name is None:
             raise AirflowBadRequest("No connection to insert document into.")
 
         if document is None:
-            raise AirflowBadRequest("You cannot insert an None document")
+            raise AirflowBadRequest("You cannot insert a None document")
 
         if document['id'] is None:
             document['id'] = document_id
 
-        created_document = self.cosmos_client.CreateDocument(
-            self.database_collection['_self'],
+        created_document = self.cosmos_client.CreateItem(
+            GetCollectionLink(self.database_name, self.collection_name),
             document)
 
         return created_document
 
-    def get_documents(self, sql_string):
-        if self.database_collection is None:
+    def delete_document(self, document_id):
+        if document_id is None:
+            raise AirflowBadRequest("Cannot delete a document without an ID")
+
+        self.cosmos_client.DeleteItem(
+            GetDocumentLink(self.database_name, self.collection_name, document_id))
+
+    def get_documents(self, sql_string, partition_key=None):
+        if self.collection_name is None:
             raise AirflowBadRequest("No connection to query.")
 
         if sql_string is None:
-            raise AirflowBadRequest("Document ID cannot be None")
+            raise AirflowBadRequest("SQL query string cannot be None")
 
         # Query them in SQL
         query = {'query': sql_string}
 
-        # todo: what would be the correct options
-        options = {}
-        options['enableCrossPartitionQuery'] = True
+        result_iterable = self.cosmos_client.QueryItems(
+            GetCollectionLink(self.database_name, self.collection_name),
+            query,
+            partition_key)
 
-        result_iterable = self.cosmos_client.QueryDocuments(self.database_collection['_self'], query, options)
         return list(result_iterable)
+
+
+def GetDatabaseLink(database_id):
+    return "dbs" + "/" + database_id
+
+
+def GetCollectionLink(database_id, collection_id):
+    return GetDatabaseLink(database_id) + "/" + "colls" + "/" + collection_id
+
+
+def GetDocumentLink(database_id, collection_id, document_id):
+    return GetCollectionLink(database_id, collection_id) + "/" + "docs" + "/" + document_id

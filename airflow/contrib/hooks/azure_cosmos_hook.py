@@ -27,9 +27,8 @@ class AzureCosmosDBHook(BaseHook):
     """
     Interacts with Azure CosmosDB.
 
-    Endpoint, Master Key, Database and collection name should be extra field as
-    {"endpoint_uri": "<ENDPOINT_URI>", "master_key":"<MASTER_KEY>",
-    "database_name": "<DATABASE_NAME>", "collection_name": "COLLECTION_NAME"}.
+    login should be the endpoint uri, password should be the master key
+    {"database_name": "<DATABASE_NAME>", "collection_name": "COLLECTION_NAME"}.
 
     :param azure_cosmos_conn_id: Reference to the Azure CosmosDB connection.
     :type azure_cosmos_conn_id: str
@@ -39,31 +38,24 @@ class AzureCosmosDBHook(BaseHook):
         self.conn_id = azure_cosmos_conn_id
         self.connection = self.get_connection(self.conn_id)
         self.extras = self.connection.extra_dejson
-        self.cosmos_client = None
 
-    def get_conn(self):
-        """Return a cosmos db collection."""
-        if self.cosmos_client is not None:
-            return self.cosmos_client
-
-        conn = self.get_connection(self.conn_id)
-        service_options = conn.extra_dejson
-        self.endpoint_uri = service_options.get('endpoint_uri')
-        self.master_key = service_options.get('master_key')
-        self.database_name = service_options.get('database_name')
-        self.collection_name = service_options.get('collection_name')
-
-        if self.endpoint_uri is None:
-            raise AirflowBadRequest("Endpoint URI cannot be None")
-
-        if self.master_key is None:
-            raise AirflowBadRequest("Master Key cannot be None")
+        self.endpoint_uri = self.connection.login
+        self.master_key = self.connection.password
+        self.database_name = self.extras.get('database_name')
+        self.collection_name = self.extras.get('collection_name')
 
         if self.database_name is None:
             raise AirflowBadRequest("Database cannot be None")
 
         if self.collection_name is None:
             raise AirflowBadRequest("Collection name cannot be None")
+
+        self.cosmos_client = None
+
+    def get_conn(self):
+        """Return a cosmos db client."""
+        if self.cosmos_client is not None:
+            return self.cosmos_client
 
         # Initialize the Python Azure Cosmos DB client
         self.cosmos_client = cosmos_client.CosmosClient(self.endpoint_uri, {'masterKey': self.master_key})
@@ -90,12 +82,37 @@ class AzureCosmosDBHook(BaseHook):
 
         return created_document
 
+    def insert_documents(self, documents, document_id=None):
+        if self.collection_name is None:
+            raise AirflowBadRequest("No connection to insert document into.")
+
+        if documents is None:
+            raise AirflowBadRequest("You cannot insert empty documents")
+
+        created_documents = []
+        for single_document in documents:
+            created_documents.append(
+                self.cosmos_client.CreateItem(
+                    GetCollectionLink(self.database_name, self.collection_name),
+                    single_document))
+
+        return created_documents
+
     def delete_document(self, document_id):
         if document_id is None:
-            raise AirflowBadRequest("Cannot delete a document without an ID")
+            raise AirflowBadRequest("Cannot delete a document without an id")
 
         self.cosmos_client.DeleteItem(
             GetDocumentLink(self.database_name, self.collection_name, document_id))
+
+    def get_document(self, document_id):
+        if document_id is None:
+            raise AirflowBadRequest("Cannot get a document without an id")
+
+        returned_document = self.cosmos_client.ReadItem(
+            GetDocumentLink(self.database_name, self.collection_name, document_id))
+
+        return returned_document
 
     def get_documents(self, sql_string, partition_key=None):
         if self.collection_name is None:

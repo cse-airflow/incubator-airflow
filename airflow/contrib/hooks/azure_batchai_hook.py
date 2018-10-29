@@ -54,16 +54,20 @@ class AzureBatchAIHook(BaseHook):
             secret=conn.password,
             tenant=conn.extra_dejson['tenantId']
         )
+
         subscription_id = conn.extra_dejson['subscriptionId']
+        print "returning batch service client with creds....."
         return BatchServiceClient(credentials, str(subscription_id))
 
     def create(self, resource_group, workspace_name, cluster_name, parameters):
+        print "creating cluster....."
         self.connection.clusters.create(resource_group,
                                           workspace_name,
                                           cluster_name,
                                           parameters)
                                                         
     def update(self, resource_group, workspace_name, cluster_name):
+        print "updating cluster....."
         self.connection.clusters.update(resource_group,
                                           workspace_name,
                                           cluster_name)

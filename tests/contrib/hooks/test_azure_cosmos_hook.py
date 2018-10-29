@@ -33,21 +33,19 @@ class TestAzureDocsmosDbHook(unittest.TestCase):
     def setUp(self):
         configuration.load_test_config()
         db.merge_conn(
-            models.Connection(
-                conn_id='azcosmos_test_key',
+            models.Connection(                
+                conn_id='azcosmos_test_key_id',
                 conn_type='azure_cosmos',
-                login='client_id',
-                password='client secret',
-                extra=json.dumps({"endpoint_uri": "INSERT_ENDPOINT",
-                                  "master_key": "INSERT_MASTERKEY",
-                                  "database_name": "INSERT_DB_NAME",
-                                  "collection_name": "INSERT_COLLECTIONNAME"})
+                login='ENDPOINT_URI',
+                password='MASTER_KEY',
+                extra=json.dumps({"database_name": "DATABASE_NAME",
+                                  "collection_name": "COLLECTION_NAME"})
             )
         )
 
     def simple_roundtrip_test(self):
-        hook = AzureCosmosDBHook(azure_cosmos_conn_id='azcosmos_test_key')
-        self.assertEqual(hook.conn_id, 'azcosmos_test_key')
+        hook = AzureCosmosDBHook(azure_cosmos_conn_id='azcosmos_test_key_id')
+        self.assertEqual(hook.conn_id, 'azcosmos_test_key_id')
         hook.get_conn()
         total_documents = hook.get_documents("SELECT * FROM c")
         before_count = len(total_documents)
@@ -57,9 +55,20 @@ class TestAzureDocsmosDbHook(unittest.TestCase):
         total_documents_after = hook.get_documents("SELECT * FROM c")
         after_count = len(total_documents_after)
         self.assertEqual(before_count + 1, after_count)
+        created_document = hook.get_document('airflow_test_item')
+        self.assertEqual(created_document['temp'], "stuff")
         hook.delete_document("airflow_test_item")
         total_documents_after_delete = hook.get_documents("SELECT * FROM c")
         after_delete_count = len(total_documents_after_delete)
+        insert_new_documents = [{
+            "id": "airflow_test_item",
+            "temp": "stuff"},
+            {"id": "airflow_test_item1",
+            "temp": "stuff2"},
+            {"id": "airflow_test_item2",
+            "temp": "stuff3"}]
+
+        hook.insert_documents(insert_new_documents)
         self.assertEqual(before_count, after_delete_count)
 
 

@@ -51,7 +51,7 @@ run_this_first = AzureBatchAIOperator(
     dag=dag
     )
 
-options = ['branch_a', 'branch_b']
+#options = ['branch_a', 'branch_b']
 
 branching = BranchPythonOperator(
     task_id='branching',
@@ -65,9 +65,9 @@ join = DummyOperator(
     dag=dag
 )
 
-for option in options:
-    t = DummyOperator(task_id=option, dag=dag)
-    t.set_upstream(branching)
-    dummy_follow = DummyOperator(task_id='follow_' + option, dag=dag)
-    t.set_downstream(dummy_follow)
-    dummy_follow.set_downstream(join)
+# for option in options:
+#     t = DummyOperator(task_id=option, dag=dag)
+#     t.set_upstream(branching)
+#     dummy_follow = DummyOperator(task_id='follow_' + option, dag=dag)
+#     t.set_downstream(dummy_follow)
+#     dummy_follow.set_downstream(join)

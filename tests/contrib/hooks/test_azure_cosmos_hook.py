@@ -18,184 +18,49 @@
 # under the License.
 #
 
-
-import json
 import unittest
-import uuid
+import json
 
-from airflow.exceptions import AirflowException
 from airflow.contrib.hooks.azure_cosmos_hook import AzureCosmosDBHook
 
 from airflow import configuration
 from airflow import models
 from airflow.utils import db
 
-import logging
 
-try:
-    from unittest import mock
+class TestAzureDocsmosDbHook(unittest.TestCase):
 
-except ImportError:
-    try:
-        import mock
-    except ImportError:
-        mock = None
-
-
-class TestAzureCosmosDbHook(unittest.TestCase):
-
-    # Set up an environment to test with
     def setUp(self):
-        # set up some test variables
-        self.test_end_point = 'https://test_endpoint:443'
-        self.test_master_key = 'magic_test_key'
-        self.test_database_name = 'test_database_name'
-        self.test_collection_name = 'test_collection_name'
-        self.test_database_default = 'test_database_default'
-        self.test_collection_default = 'test_collection_default'
         configuration.load_test_config()
         db.merge_conn(
             models.Connection(
-                conn_id='azure_cosmos_test_key_id',
+                conn_id='azcosmos_test_key',
                 conn_type='azure_cosmos',
-                login=self.test_end_point,
-                password=self.test_master_key,
-                extra=json.dumps({'database_name': self.test_database_default,
-                                  'collection_name': self.test_collection_default})
+                login='client_id',
+                password='client secret',
+                extra=json.dumps({"endpoint_uri": "INSERT_ENDPOINT",
+                                  "master_key": "INSERT_MASTERKEY",
+                                  "database_name": "INSERT_DB_NAME",
+                                  "collection_name": "INSERT_COLLECTIONNAME"})
             )
         )
 
-    @mock.patch('azure.cosmos.cosmos_client.CosmosClient')
-    def test_create_database(self, cosmos_mock):
-        self.cosmos = AzureCosmosDBHook(azure_cosmos_conn_id='azure_cosmos_test_key_id')
-        self.cosmos.create_database(self.test_database_name)
-        expected_calls = [mock.call().CreateDatabase({'id': self.test_database_name})]
-        cosmos_mock.assert_any_call(self.test_end_point, {'masterKey': self.test_master_key})
-        cosmos_mock.assert_has_calls(expected_calls)
-
-    @mock.patch('azure.cosmos.cosmos_client.CosmosClient')
-    def test_create_database_exception(self, cosmos_mock):
-        self.cosmos = AzureCosmosDBHook(azure_cosmos_conn_id='azure_cosmos_test_key_id')
-        self.assertRaises(AirflowException, self.cosmos.create_database, None)
-
-    @mock.patch('azure.cosmos.cosmos_client.CosmosClient')
-    def test_create_container_exception(self, cosmos_mock):
-        self.cosmos = AzureCosmosDBHook(azure_cosmos_conn_id='azure_cosmos_test_key_id')
-        self.assertRaises(AirflowException, self.cosmos.create_collection, None)
-
-    @mock.patch('azure.cosmos.cosmos_client.CosmosClient')
-    def test_create_container(self, cosmos_mock):
-        self.cosmos = AzureCosmosDBHook(azure_cosmos_conn_id='azure_cosmos_test_key_id')
-        self.cosmos.create_collection(self.test_collection_name, self.test_database_name)
-        expected_calls = [mock.call().CreateContainer(
-            'dbs/test_database_name',
-            {'id': self.test_collection_name})]
-        cosmos_mock.assert_any_call(self.test_end_point, {'masterKey': self.test_master_key})
-        cosmos_mock.assert_has_calls(expected_calls)
-
-    @mock.patch('azure.cosmos.cosmos_client.CosmosClient')
-    def test_create_container_default(self, cosmos_mock):
-        self.cosmos = AzureCosmosDBHook(azure_cosmos_conn_id='azure_cosmos_test_key_id')
-        self.cosmos.create_collection(self.test_collection_name)
-        expected_calls = [mock.call().CreateContainer(
-            'dbs/test_database_default',
-            {'id': self.test_collection_name})]
-        cosmos_mock.assert_any_call(self.test_end_point, {'masterKey': self.test_master_key})
-        cosmos_mock.assert_has_calls(expected_calls)
-
-    @mock.patch('azure.cosmos.cosmos_client.CosmosClient')
-    def test_upsert_document_default(self, cosmos_mock):
-        test_id = str(uuid.uuid4())
-        cosmos_mock.return_value.CreateItem.return_value = {'id': test_id}
-        self.cosmos = AzureCosmosDBHook(azure_cosmos_conn_id='azure_cosmos_test_key_id')
-        returned_item = self.cosmos.upsert_document({'id': test_id})
-        expected_calls = [mock.call().CreateItem(
-            'dbs/' + self.test_database_default + '/colls/' + self.test_collection_default,
-            {'id': test_id})]
-        cosmos_mock.assert_any_call(self.test_end_point, {'masterKey': self.test_master_key})
-        cosmos_mock.assert_has_calls(expected_calls)
-        logging.getLogger().info(returned_item)
-        self.assertEqual(returned_item['id'], test_id)
-
-    @mock.patch('azure.cosmos.cosmos_client.CosmosClient')
-    def test_upsert_document(self, cosmos_mock):
-        test_id = str(uuid.uuid4())
-        cosmos_mock.return_value.CreateItem.return_value = {'id': test_id}
-        self.cosmos = AzureCosmosDBHook(azure_cosmos_conn_id='azure_cosmos_test_key_id')
-        returned_item = self.cosmos.upsert_document(
-            {'data1': 'somedata'},
-            database_name=self.test_database_name,
-            collection_name=self.test_collection_name,
-            document_id=test_id)
-
-        expected_calls = [mock.call().CreateItem(
-            'dbs/' + self.test_database_name + '/colls/' + self.test_collection_name,
-            {'data1': 'somedata', 'id': test_id})]
-
-        cosmos_mock.assert_any_call(self.test_end_point, {'masterKey': self.test_master_key})
-        cosmos_mock.assert_has_calls(expected_calls)
-        logging.getLogger().info(returned_item)
-        self.assertEqual(returned_item['id'], test_id)
-
-    @mock.patch('azure.cosmos.cosmos_client.CosmosClient')
-    def test_insert_documents(self, cosmos_mock):
-        test_id1 = str(uuid.uuid4())
-        test_id2 = str(uuid.uuid4())
-        test_id3 = str(uuid.uuid4())
-        documents = [
-            {'id': test_id1, 'data': 'data1'},
-            {'id': test_id2, 'data': 'data2'},
-            {'id': test_id3, 'data': 'data3'}]
-
-        self.cosmos = AzureCosmosDBHook(azure_cosmos_conn_id='azure_cosmos_test_key_id')
-        returned_item = self.cosmos.insert_documents(documents)
-        expected_calls = [
-            mock.call().CreateItem(
-                'dbs/' + self.test_database_default + '/colls/' + self.test_collection_default,
-                {'data': 'data1', 'id': test_id1}),
-            mock.call().CreateItem(
-                'dbs/' + self.test_database_default + '/colls/' + self.test_collection_default,
-                {'data': 'data2', 'id': test_id2}),
-            mock.call().CreateItem(
-                'dbs/' + self.test_database_default + '/colls/' + self.test_collection_default,
-                {'data': 'data3', 'id': test_id3})]
-        logging.getLogger().info(returned_item)
-        cosmos_mock.assert_any_call(self.test_end_point, {'masterKey': self.test_master_key})
-        cosmos_mock.assert_has_calls(expected_calls)
-
-    @mock.patch('azure.cosmos.cosmos_client.CosmosClient')
-    def test_delete_database(self, cosmos_mock):
-        self.cosmos = AzureCosmosDBHook(azure_cosmos_conn_id='azure_cosmos_test_key_id')
-        self.cosmos.delete_database(self.test_database_name)
-        expected_calls = [mock.call().DeleteDatabase('dbs/test_database_name')]
-        cosmos_mock.assert_any_call(self.test_end_point, {'masterKey': self.test_master_key})
-        cosmos_mock.assert_has_calls(expected_calls)
-
-    @mock.patch('azure.cosmos.cosmos_client.CosmosClient')
-    def test_delete_database_exception(self, cosmos_mock):
-        self.cosmos = AzureCosmosDBHook(azure_cosmos_conn_id='azure_cosmos_test_key_id')
-        self.assertRaises(AirflowException, self.cosmos.delete_database, None)
-
-    @mock.patch('azure.cosmos.cosmos_client.CosmosClient')
-    def test_delete_container_exception(self, cosmos_mock):
-        self.cosmos = AzureCosmosDBHook(azure_cosmos_conn_id='azure_cosmos_test_key_id')
-        self.assertRaises(AirflowException, self.cosmos.delete_collection, None)
-
-    @mock.patch('azure.cosmos.cosmos_client.CosmosClient')
-    def test_delete_container(self, cosmos_mock):
-        self.cosmos = AzureCosmosDBHook(azure_cosmos_conn_id='azure_cosmos_test_key_id')
-        self.cosmos.delete_collection(self.test_collection_name, self.test_database_name)
-        expected_calls = [mock.call().DeleteContainer('dbs/test_database_name/colls/test_collection_name')]
-        cosmos_mock.assert_any_call(self.test_end_point, {'masterKey': self.test_master_key})
-        cosmos_mock.assert_has_calls(expected_calls)
-
-    @mock.patch('azure.cosmos.cosmos_client.CosmosClient')
-    def test_delete_container_default(self, cosmos_mock):
-        self.cosmos = AzureCosmosDBHook(azure_cosmos_conn_id='azure_cosmos_test_key_id')
-        self.cosmos.delete_collection(self.test_collection_name)
-        expected_calls = [mock.call().DeleteContainer('dbs/test_database_default/colls/test_collection_name')]
-        cosmos_mock.assert_any_call(self.test_end_point, {'masterKey': self.test_master_key})
-        cosmos_mock.assert_has_calls(expected_calls)
+    def simple_roundtrip_test(self):
+        hook = AzureCosmosDBHook(azure_cosmos_conn_id='azcosmos_test_key')
+        self.assertEqual(hook.conn_id, 'azcosmos_test_key')
+        hook.get_conn()
+        total_documents = hook.get_documents("SELECT * FROM c")
+        before_count = len(total_documents)
+        hook.insert_document({
+            "id": "airflow_test_item",
+            "temp": "stuff"})
+        total_documents_after = hook.get_documents("SELECT * FROM c")
+        after_count = len(total_documents_after)
+        self.assertEqual(before_count + 1, after_count)
+        hook.delete_document("airflow_test_item")
+        total_documents_after_delete = hook.get_documents("SELECT * FROM c")
+        after_delete_count = len(total_documents_after_delete)
+        self.assertEqual(before_count, after_delete_count)
 
 
 if __name__ == '__main__':

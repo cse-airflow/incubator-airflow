@@ -152,10 +152,14 @@ azure_data_lake = [
     'azure-datalake-store==0.0.19'
 ]
 <<<<<<< HEAD
+<<<<<<< HEAD
 azure_cosmos = ['azure-cosmos>=3.0.1']
 =======
 azure_cosmos = ['pydocumentdb>=2.3.3']
 >>>>>>> Initial hook code for CosmosDB
+=======
+azure_cosmos = ['azure-cosmos>=3.0.1']
+>>>>>>> Initial simple test
 cassandra = ['cassandra-driver>=3.13.0']
 celery = [
     'celery>=4.1.1, <4.2.0',

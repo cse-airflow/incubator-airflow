@@ -18,6 +18,8 @@
 # under the License.
 #
 
+import os
+
 from time import sleep
 
 from airflow.contrib.hooks.azure_batchai_hook import (AzureBatchAIHook)
@@ -26,12 +28,22 @@ from airflow.contrib.hooks.azure_batchai_hook import (AzureBatchAIHook)
 from airflow.exceptions import AirflowException, AirflowTaskTimeout
 from airflow.models import BaseOperator
 
+from azure.common.credentials import ServicePrincipalCredentials
+from azure.mgmt.resource import ResourceManagementClient
+
+from azure.common.client_factory import get_client_from_auth_file
+
 from azure.mgmt.batchai.models import (ClusterCreateParameters,
                                         ManualScaleSettings,
                                         AutoScaleSettings,
                                         ScaleSettings,
                                         VirtualMachineConfiguration,
                                         ImageReference,
+                                        # SetupTasks,
+                                        MountVolumes,
+                                        KeyVaultSecretReference,
+                                        AppInsightsReference,
+                                        PerformanceCountersSettings,
                                         NodeSetup,
                                         UserAccountSettings,
                                         ResourceId)
@@ -60,8 +72,8 @@ class AzureBatchAIOperator(BaseOperator):
     :type name: str
     :param image: the docker image to be used
     :type image: str
-    :param region: the region wherein this container instance should be started
-    :type region: str
+    :param location: the location wherein this cluster should be started
+    :type location: str
     :param: environment_variables: key,value pairs containing environment variables
         which will be passed to the running container
     :type: environment_variables: dict
@@ -94,7 +106,7 @@ class AzureBatchAIOperator(BaseOperator):
 
     template_fields = ('name', 'environment_variables')
     template_ext = tuple()
-    def __init__(self, bai_conn_id, registry_conn_id, resource_group, workspace_name, cluster_name, region,
+    def __init__(self, bai_conn_id, registry_conn_id, resource_group, workspace_name, cluster_name, location,
                 environment_variables={}, volumes=[], memory_in_gb=2.0, cpu=1.0,
                 *args, **kwargs):
         self.bai_conn_id = bai_conn_id
@@ -102,7 +114,7 @@ class AzureBatchAIOperator(BaseOperator):
         self.resource_group = resource_group
         self.workspace_name = workspace_name
         self.cluster_name = cluster_name
-        self.region = region
+        self.location = location
         self.environment_variables = environment_variables
         self.volumes = volumes
         self.memory_in_gb = memory_in_gb
@@ -118,9 +130,19 @@ class AzureBatchAIOperator(BaseOperator):
         # else:
         #     image_registry_credentials = None
 
-        environment_variables = []
-        for key, value in self.environment_variables.items():
-            environment_variables.append(EnvironmentVariable(key, value))
+        # creds = ServicePrincipalCredentials(
+        # client_id=aad_client_id, secret=aad_secret, tenant=aad_tenant)
+
+        resource_client = get_client_from_auth_file(ResourceManagementClient)
+        resource_group_params = {'location': self.location }
+        resource_client.resource_groups.create_or_update(self.resource_group, resource_group_params) 
+
+        # batchai_client = batchai.BatchAIManagementClient(
+        # credentials=creds, subscription_id=subscription_id)
+
+        # environment_variables = []
+        # for key, value in self.environment_variables.items():
+        #     environment_variables.append(EnvironmentVariable(key, value))
 
         # volumes = []
         # volume_mounts = []
@@ -133,49 +155,71 @@ class AzureBatchAIOperator(BaseOperator):
         #                                         read_only))
         #     volume_mounts.append(VolumeMount(mount_name, mount_path, read_only))
         try:
-            self.log.info("Starting container group with %.1f cpu %.1f mem",
+            self.log.info("Starting Batch AI cluster with %.1f cpu %.1f mem",
                           self.cpu, self.memory_in_gb)
-
             
-            manual_scale_settings = ManualScaleSettings(0, 'requeue')
-            auto_scale_settings = AutoScaleSettings(0,10,0)
-            scale_settings = ScaleSettings(manual_scale_settings, auto_scale_settings)
+            # manual_scale_settings = ManualScaleSettings(
+            #     target_node_count=0,
+            #     node_deallocation_option='requeue')
 
-            # TODO: come back to image ref...Azure?
-            image_reference = ImageReference()
+            auto_scale_settings = AutoScaleSettings(
+                minimum_node_count=0,
+                maximum_node_count=10,
+                initial_node_count=0)
 
-            vm_configuration = VirtualMachineConfiguration(image_reference)
+            scale_settings = ScaleSettings(
+                auto_scale=auto_scale_settings)
 
-            env_vars = []
-            secrets = []
-            setup_tasks = SetupTakss('cmd_line_task',env_vars,secrets,'std_err_prefix','std_err_suffix')
+            image_reference = ImageReference(
+                publisher='Canonical',
+                offer='UbuntuServer',
+                sku='16.04-LTS',
+                version='latest')
 
-            file_shares = []
-            file_systems = []
-            file_servers = []
-            unmanaged_file_systems = []
-            mount_volumes = MountVolumes(file_shares, file_systems, file_servers, unmanaged_file_systems)
+            vm_configuration = VirtualMachineConfiguration(
+                image_reference=image_reference)
 
-            component = ResourceId()
-            instumentation_key_ref = KeyVaultSecretReference()
-            app_insights_ref = AppInsightsReference(component,'instrumentation_key',instumentation_key_ref)
-            perf_counter_settings = PerformanceCountersSettings(app_insights_ref)
+            # env_vars = []
+            # secrets = []
+            # setup_tasks = SetupTasks('cmd_line_task',env_vars,secrets,'std_err_prefix','std_err_suffix')
 
-            node_setup = (setup_tasks, mount_volumes, perf_counter_settings)
+            # file_shares = []
+            # file_systems = []
+            # file_servers = []
+            # unmanaged_file_systems = []
+            # mount_volumes = MountVolumes(file_shares, file_systems, file_servers, unmanaged_file_systems)
 
-            user_account_settings = UserAccountSettings('username','ssh_key','password')
-            subnet = ResourceId('subnet_id')
+            # component = ResourceId()
+            # source_vault = ResourceId()
+            # instumentation_key_ref = KeyVaultSecretReference(source_vault, 'secret_url')
+            # app_insights_ref = AppInsightsReference(component,'instrumentation_key',instumentation_key_ref)
+            # perf_counter_settings = PerformanceCountersSettings(app_insights_ref)
+
+            # node_setup = (setup_tasks, mount_volumes, perf_counter_settings)
+
+            username=os.environ['USERNAME'],
+            # ssh_key=os.environ['SSH_KEY'],
+            password=os.environ['PASSWORD']
+
+            user_account_settings = UserAccountSettings(
+                admin_user_name=username,
+                # ssh_key=ssh_key,
+                admin_user_password=password)
+
+            # subnet = ResourceId('subnet_id')
 
             parameters = ClusterCreateParameters(
-                vm_size='STANDARD_A1',
+                vm_size='STANDARD_NC6',
                 vm_priority='dedicated',
                 scale_settings=scale_settings,
-                vm_configuration=vm_configuration,
-                node_setup=node_setup,
-                user_account_settings=user_account_settings,
-                subnet=subnet)
+                virtual_machine_configuration=vm_configuration,
+                # node_setup=node_setup,
+                user_account_settings=user_account_settings)
+                # subnet=subnet)
 
-            batch_ai_hook.create(self.resource_group, self.workspace_name, self.cluster_name, parameters)
+            print "TESTING!"
+            print self.resource_group
+            batch_ai_hook.create(self.resource_group, self.workspace_name, self.cluster_name, self.location, parameters)
             self.log.info("Cluster started")
 
             exit_code = self._monitor_logging(batch_ai_hook, self.resource_group, self.workspace_name)
@@ -185,6 +229,7 @@ class AzureBatchAIOperator(BaseOperator):
                 raise AirflowException("Container had a non-zero exit code, %s"
                                        % exit_code)
         except CloudError as e:
+            print e
             self.log.exception("Could not start batch ai cluster")
             raise AirflowException("Could not start batch ai cluster")
         

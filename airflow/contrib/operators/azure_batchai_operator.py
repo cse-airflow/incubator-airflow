@@ -31,6 +31,7 @@ from azure.mgmt.batchai.models import (ClusterCreateParameters,
                                         AutoScaleSettings,
                                         ScaleSettings,
                                         VirtualMachineConfiguration,
+                                        ImageReference,
                                         NodeSetup,
                                         UserAccountSettings,
                                         ResourceId)
@@ -136,12 +137,35 @@ class AzureBatchAIOperator(BaseOperator):
                           self.cpu, self.memory_in_gb)
 
             
-            manual_scale_settings = ManualScaleSettings()
+            manual_scale_settings = ManualScaleSettings(0, 'requeue')
+            auto_scale_settings = AutoScaleSettings(0,10,0)
             scale_settings = ScaleSettings(manual_scale_settings, auto_scale_settings)
-            vm_configuration = []
-            node_setup = []
-            user_account_settings = []
-            subnet = []
+
+            # TODO: come back to image ref...Azure?
+            image_reference = ImageReference()
+
+            vm_configuration = VirtualMachineConfiguration(image_reference)
+
+            env_vars = []
+            secrets = []
+            setup_tasks = SetupTakss('cmd_line_task',env_vars,secrets,'std_err_prefix','std_err_suffix')
+
+            file_shares = []
+            file_systems = []
+            file_servers = []
+            unmanaged_file_systems = []
+            mount_volumes = MountVolumes(file_shares, file_systems, file_servers, unmanaged_file_systems)
+
+            component = ResourceId()
+            instumentation_key_ref = KeyVaultSecretReference()
+            app_insights_ref = AppInsightsReference(component,'instrumentation_key',instumentation_key_ref)
+            perf_counter_settings = PerformanceCountersSettings(app_insights_ref)
+
+            node_setup = (setup_tasks, mount_volumes, perf_counter_settings)
+
+            user_account_settings = UserAccountSettings('username','ssh_key','password')
+            subnet = ResourceId('subnet_id')
+
             parameters = ClusterCreateParameters(
                 vm_size='STANDARD_A1',
                 vm_priority='dedicated',

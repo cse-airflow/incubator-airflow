@@ -35,6 +35,7 @@ class AzureBatchAIHook(BaseHook):
         if key_path:
             if key_path.endswith('.json'):
                 self.log.info('Getting connection using a JSON key file.')
+                print key_path
                 return get_client_from_auth_file(BatchAIManagementClient,
                                                  key_path)
             else:
@@ -44,11 +45,13 @@ class AzureBatchAIHook(BaseHook):
             key_path = os.environ.get('AZURE_AUTH_LOCATION')
             if key_path.endswith('.json'):
                 self.log.info('Getting connection using a JSON key file.')
+                print key_path
                 return get_client_from_auth_file(BatchAIManagementClient,
                                                  key_path)
             else:
                 raise AirflowException('Unrecognised extension for key file.')
         
+        print "creating creds"
         credentials = ServicePrincipalCredentials(
             client_id=conn.login,
             secret=conn.password,
@@ -59,10 +62,18 @@ class AzureBatchAIHook(BaseHook):
         print "returning batch service client with creds....."
         return BatchAIManagementClient(credentials, str(subscription_id))
 
-    def create(self, resource_group, workspace_name, cluster_name, parameters):
-        print "creating cluster....."
-        print self.connection
-        self.connection.clusters.create(resource_group,
+    def create(self, resource_group, workspace_name, cluster_name, location, parameters):
+        print "creating workspace....."
+        print resource_group
+        print workspace_name
+        print cluster_name
+        print parameters
+        self.connection.workspaces._create_initial(resource_group,
+                                                    workspace_name,
+                                                    location)
+        
+        print "creating cluster....."                                            
+        self.connection.clusters._create_initial(resource_group,
                                           workspace_name,
                                           cluster_name,
                                           parameters)

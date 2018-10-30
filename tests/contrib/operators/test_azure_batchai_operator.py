@@ -30,9 +30,9 @@ def main():
         'azure_batchai_default',
         None,  # Registry connection
         'batch-ai-test-rg',
+        'batch-ai-workspace',
         'batch-ai-cluster',
-        'image-name',
-        'WestUS2',
+        'eastus',
         environment_variables={},
         volumes=[],
         memory_in_gb=2.0,

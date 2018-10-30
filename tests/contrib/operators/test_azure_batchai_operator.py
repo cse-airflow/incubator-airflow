@@ -21,9 +21,22 @@
 import sys
 import unittest
 
-# from airflow import configuration
-# from airflow.exceptions import AirflowException
+from airflow import configuration
+from airflow.exceptions import AirflowException
 from airflow.contrib.operators.azure_batchai_operator import AzureBatchAIOperator
+
+try:
+    from unittest import mock
+except ImportError:
+    try:
+        import mock
+    except ImportError:
+        mock = None
+
+# RESPONSE_WITHOUT_FAILURES = {
+#     "jobName": "51455483-c62c-48ac-9b88-53a6a725baa3",
+#     "jobId": "8ba9d676-4108-4474-9dca-8bbac1da9b19"
+# }
 
 def main():
     test_operator = AzureBatchAIOperator(
@@ -43,36 +56,23 @@ def main():
     test_operator.execute()
 
 
-# try:
-#     from unittest import mock
-# except ImportError:
-#     try:
-#         import mock
-#     except ImportError:
-#         mock = None
+class TestAzureatchAIOperator(unittest.TestCase):
 
-# RESPONSE_WITHOUT_FAILURES = {
-#     "jobName": "51455483-c62c-48ac-9b88-53a6a725baa3",
-#     "jobId": "8ba9d676-4108-4474-9dca-8bbac1da9b19"
-# }
+    @mock.patch('airflow.contrib.operators.azure_batchai_operator.AzureBatchAIHook')
+    def setUp(self, azure_batchai_hook_mock):
+        configuration.load_test_config()
 
-
-# class TestAWSBatchOperator(unittest.TestCase):
-
-#     @mock.patch('airflow.contrib.operators.awsbatch_operator.AwsHook')
-#     def setUp(self, aws_hook_mock):
-#         configuration.load_test_config()
-
-#         self.aws_hook_mock = aws_hook_mock
-#         self.batch = AWSBatchOperator(
-#             task_id='task',
-#             job_name='51455483-c62c-48ac-9b88-53a6a725baa3',
-#             job_queue='queue',
-#             job_definition='hello-world',
-#             max_retries=5,
-#             overrides={},
-#             aws_conn_id=None,
-#             region_name='eu-west-1')
+        self.azure_batchai_hook_mock = azure_batchai_hook_mock
+        self.batch = AzureBatchAIOperator(
+            # TODO: fix this so it matches...also fix operator
+            task_id='task',
+            job_name='51455483-c62c-48ac-9b88-53a6a725baa3',
+            job_queue='queue',
+            job_definition='hello-world',
+            max_retries=5,
+            overrides={},
+            aws_conn_id=None,
+            region_name='eu-west-1')
 
 #     def test_init(self):
 #         self.assertEqual(self.batch.job_name, '51455483-c62c-48ac-9b88-53a6a725baa3')

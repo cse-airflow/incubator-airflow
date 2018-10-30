@@ -21,7 +21,7 @@ from airflow.exceptions import AirflowException
 from azure.common.client_factory import get_client_from_auth_file
 from azure.common.credentials import ServicePrincipalCredentials
 
-from azure.batch import BatchServiceClient
+from azure.mgmt.batchai import BatchAIManagementClient
 
 class AzureBatchAIHook(BaseHook):
 
@@ -35,7 +35,7 @@ class AzureBatchAIHook(BaseHook):
         if key_path:
             if key_path.endswith('.json'):
                 self.log.info('Getting connection using a JSON key file.')
-                return get_client_from_auth_file(BatchServiceClient,
+                return get_client_from_auth_file(BatchAIManagementClient,
                                                  key_path)
             else:
                 raise AirflowException('Unrecognised extension for key file.')
@@ -44,7 +44,7 @@ class AzureBatchAIHook(BaseHook):
             key_path = os.environ.get('AZURE_AUTH_LOCATION')
             if key_path.endswith('.json'):
                 self.log.info('Getting connection using a JSON key file.')
-                return get_client_from_auth_file(BatchServiceClient,
+                return get_client_from_auth_file(BatchAIManagementClient,
                                                  key_path)
             else:
                 raise AirflowException('Unrecognised extension for key file.')
@@ -57,10 +57,11 @@ class AzureBatchAIHook(BaseHook):
 
         subscription_id = conn.extra_dejson['subscriptionId']
         print "returning batch service client with creds....."
-        return BatchServiceClient(credentials, str(subscription_id))
+        return BatchAIManagementClient(credentials, str(subscription_id))
 
     def create(self, resource_group, workspace_name, cluster_name, parameters):
         print "creating cluster....."
+        print self.connection
         self.connection.clusters.create(resource_group,
                                           workspace_name,
                                           cluster_name,

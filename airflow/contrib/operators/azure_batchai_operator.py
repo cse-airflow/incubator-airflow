@@ -27,6 +27,8 @@ from airflow.exceptions import AirflowException, AirflowTaskTimeout
 from airflow.models import BaseOperator
 
 from azure.mgmt.batchai.models import (ClusterCreateParameters,
+                                        ManualScaleSettings,
+                                        AutoScaleSettings,
                                         ScaleSettings,
                                         VirtualMachineConfiguration,
                                         NodeSetup,
@@ -132,36 +134,27 @@ class AzureBatchAIOperator(BaseOperator):
         try:
             self.log.info("Starting container group with %.1f cpu %.1f mem",
                           self.cpu, self.memory_in_gb)
-            # resources = ResourceRequirements(ResourceRequests(
-            #     self.memory_in_gb,
-            #     self.cpu))
 
-            #  container = Container(
-            #     self.name, self.image, resources,
-            #     environment_variables=environment_variables,
-            #     volume_mounts=volume_mounts)
-
-            #  container_group = ContainerGroup(
-            #     location=self.region,
-            #     containers=[container, ],
-            #     image_registry_credentials=image_registry_credentials,
-            #     volumes=volumes,
-            #     restart_policy='Never',
-            #     os_type='Linux')
-
+            
+            manual_scale_settings = ManualScaleSettings()
+            scale_settings = ScaleSettings(manual_scale_settings, auto_scale_settings)
+            vm_configuration = []
+            node_setup = []
+            user_account_settings = []
+            subnet = []
             parameters = ClusterCreateParameters(
-                vm_size=STANDARD_A1,
+                vm_size='STANDARD_A1',
                 vm_priority='dedicated',
-                scale_settings=,
-                vm_configuration,
-                node_setup,
-                user_account_settings,
-                subnet)
+                scale_settings=scale_settings,
+                vm_configuration=vm_configuration,
+                node_setup=node_setup,
+                user_account_settings=user_account_settings,
+                subnet=subnet)
 
-            batch_ai_hook.create(self.resource_group, self.workspace_name, self.cluster_name)
+            batch_ai_hook.create(self.resource_group, self.workspace_name, self.cluster_name, parameters)
             self.log.info("Cluster started")
 
-            exit_code = self._monitor_logging(batch_ai_hook, self.resource_group, self.name)
+            exit_code = self._monitor_logging(batch_ai_hook, self.resource_group, self.workspace_name)
             self.log.info("Container had exit code: %s", exit_code)
 
             if exit_code != 0:

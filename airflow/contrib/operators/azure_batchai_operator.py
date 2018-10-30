@@ -217,15 +217,13 @@ class AzureBatchAIOperator(BaseOperator):
                 user_account_settings=user_account_settings)
                 # subnet=subnet)
 
-            print "TESTING!"
-            print self.resource_group
             batch_ai_hook.create(self.resource_group, self.workspace_name, self.cluster_name, self.location, parameters)
             self.log.info("Cluster started")
 
             exit_code = self._monitor_logging(batch_ai_hook, self.resource_group, self.workspace_name)
             self.log.info("Container had exit code: %s", exit_code)
 
-            if exit_code != 0:
+            if exit_code and exit_code != 0:
                 raise AirflowException("Container had a non-zero exit code, %s"
                                        % exit_code)
         except CloudError as e:

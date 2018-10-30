@@ -51,7 +51,6 @@ class AzureBatchAIHook(BaseHook):
             else:
                 raise AirflowException('Unrecognised extension for key file.')
         
-        print "creating creds"
         credentials = ServicePrincipalCredentials(
             client_id=conn.login,
             secret=conn.password,
@@ -64,10 +63,6 @@ class AzureBatchAIHook(BaseHook):
 
     def create(self, resource_group, workspace_name, cluster_name, location, parameters):
         print "creating workspace....."
-        print resource_group
-        print workspace_name
-        print cluster_name
-        print parameters
         self.connection.workspaces._create_initial(resource_group,
                                                     workspace_name,
                                                     location)
@@ -77,6 +72,8 @@ class AzureBatchAIHook(BaseHook):
                                           workspace_name,
                                           cluster_name,
                                           parameters)
+
+        print "cluster created"
                                                         
     def update(self, resource_group, workspace_name, cluster_name):
         print "updating cluster....."

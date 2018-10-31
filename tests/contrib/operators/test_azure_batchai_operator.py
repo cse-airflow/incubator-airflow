@@ -55,25 +55,8 @@ except ImportError:
 class TestAzurBatchAIOperator(unittest.TestCase):
 
     @mock.patch('airflow.contrib.operators.azure_batchai_operator.AzureBatchAIHook')
-    # def setUp(self, azure_batchai_hook_mock):
-    #     configuration.load_test_config()
-
-    #     self.azure_batchai_hook_mock = azure_batchai_hook_mock
-    #     self.batch = AzureBatchAIOperator(
-    #         # TODO: fix this so it matches...also fix operator
-    #         bai_conn_id='azure_batchai_default',
-    #         resource_group='batch-ai-test-rg',
-    #         workspace_name='batch-ai-workspace',
-    #         cluster_name='batch-ai-cluster',
-    #         location='eastus',
-    #         environment_variables={},
-    #         volumes=[],
-    #         memory_in_gb=2.0,
-    #         cpu=1.0,
-    #         task_id='test_operator')
-
-    def test_execute(self, bai_mock):
-        bai_mock.return_value.get_state_exitcode.return_value = "Terminated", 0
+    def test_execute(self, abai_mock):
+        abai_mock.return_value.get_state_exitcode.return_value = "Terminated", 0
         self.batch = AzureBatchAIOperator('azure_batchai_default',
                                     'batch-ai-test-rg',
                                     'batch-ai-workspace',
@@ -92,24 +75,28 @@ class TestAzurBatchAIOperator(unittest.TestCase):
         self.assertEqual(self.batch.workspace_name, 'batch-ai-workspace')
         self.assertEqual(self.batch.cluster_name, 'batch-ai-cluster')
         self.assertEqual(self.batch.location, 'eastus')
-        # self.assertEqual(called_cg.restart_policy, 'Never')
-        # self.assertEqual(called_cg.os_type, 'Linux')
-        #  called_cg_container = called_cg.containers[0]
-        # self.assertEqual(called_cg_container.name, 'container-name')
-        # self.assertEqual(called_cg_container.image, 'container-image')
+    
+    @mock.patch('airflow.contrib.operators.azure_batchai_operator.AzureBatchAIHook')
+    
+    def test_execute_with_failures(self, abai_mock):
+        abai_mock.return_value.get_state_exitcode.return_value = "Terminated", 1
+        print abai_mock.return_value.get_state_exitcode.return_value
+        self.batch = AzureBatchAIOperator('azure_default',
+                                    'batch-ai-test-rg',
+                                    'batch-ai-workspace',
+                                    'batch-ai-cluster',
+                                    'eastus',
+                                    environment_variables={},
+                                    volumes=[],
+                                    memory_in_gb=2.0,
+                                    cpu=1.0,
+                                    task_id='test_operator')
+        # self.batch.return_value.get_state_exitcode.return_value = "Terminated", 1
+        with self.assertRaises(AirflowException):
+            self.batch.execute()
         # self.assertEqual(aci_mock.return_value.delete.call_count, 1)
-    
-    # @mock.patch('airflow.contrib.operators.azure_batch_ai_operator.AzureBatchAIHook')
-    
-    # def test_execute_with_failures(self, aci_mock):
-    #     aci_mock.return_value.get_state_exitcode.return_value = "Terminated", 1
-    #     aci = AzureContainerInstancesOperator(None, None,
-    #                                           'resource-group', 'container-name',
-    #                                           'container-image', 'region',
-    #                                           task_id='task')
-    #     with self.assertRaises(AirflowException):
-    #         aci.execute(None)
-    #      self.assertEqual(aci_mock.return_value.delete.call_count, 1)
+
+
     #  @mock.patch("airflow.contrib.operators."
     #             "azure_container_instances_operator.AzureContainerInstanceHook")
     

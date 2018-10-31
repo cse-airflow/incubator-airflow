@@ -86,6 +86,7 @@ class AzureBatchAIHook(BaseHook):
                                                         workspace_name,
                                                         cluster_name,
                                                         raw=True).response.json()
+        print "IN EXITCODE!!!"
         cluster = response['properties']['cluster']      # TODO: check to see if 'cluster' is correct
         instance_view = cluster[0]['properties'].get('instanceView', {})
         current_state = instance_view.get('currentState', {})

@@ -152,24 +152,6 @@ class AzureBatchAIOperator(BaseOperator):
             vm_configuration = VirtualMachineConfiguration(
                 image_reference=image_reference)
 
-            # env_vars = []
-            # secrets = []
-            # setup_tasks = SetupTasks('cmd_line_task',env_vars,secrets,'std_err_prefix','std_err_suffix')
-
-            # file_shares = []
-            # file_systems = []
-            # file_servers = []
-            # unmanaged_file_systems = []
-            # mount_volumes = MountVolumes(file_shares, file_systems, file_servers, unmanaged_file_systems)
-
-            # component = ResourceId()
-            # source_vault = ResourceId()
-            # instumentation_key_ref = KeyVaultSecretReference(source_vault, 'secret_url')
-            # app_insights_ref = AppInsightsReference(component,'instrumentation_key',instumentation_key_ref)
-            # perf_counter_settings = PerformanceCountersSettings(app_insights_ref)
-
-            # node_setup = (setup_tasks, mount_volumes, perf_counter_settings)
-
             username=os.environ['USERNAME'],
             # ssh_key=os.environ['SSH_KEY'],
             password=os.environ['PASSWORD']
@@ -215,36 +197,40 @@ class AzureBatchAIOperator(BaseOperator):
         last_state = None
         last_message_logged = None
         last_line_logged = None
-    #     for _ in range(43200):  # roughly 12 hours
-    #         try:
-    #             state, exit_code = batch_ai_hook.get_state_exitcode(resource_group, name)
-    #             if state != last_state:
-    #                 self.log.info("Container group state changed to %s", state)
-    #                 last_state = state
-    #             if state == "Terminated":
-    #                 return exit_code
-    #             messages = batch_ai_hook.get_messages(resource_group, name)
-    #             last_message_logged = self._log_last(messages, last_message_logged)
-    #             if state == "Running":
-    #                 try:
-    #                     logs = batch_ai_hook.get_logs(resource_group, name)
-    #                     last_line_logged = self._log_last(logs, last_line_logged)
-    #                 except CloudError as err:
-    #                     self.log.exception("Exception while getting logs from "
-    #                                        "container instance, retrying...")
-    #         except CloudError as err:
-    #             if 'ResourceNotFound' in str(err):
-    #                 self.log.warning("ResourceNotFound, container is probably removed "
-    #                                  "by another process "
-    #                                  "(make sure that the name is unique).")
-    #                 return 1
-    #             else:
-    #                 self.log.exception("Exception while getting container groups")
-    #         except Exception:
-    #             self.log.exception("Exception while getting container groups")
-    #          sleep(1)
-    #      # no return -> hence still running
-    #     raise AirflowTaskTimeout("Did not complete on time")
+        for _ in range(43200):  # roughly 12 hours
+            try:
+                state, exit_code = batch_ai_hook.get_state_exitcode(resource_group, name)
+                
+                if state != last_state:
+                    self.log.info("Container group state changed to %s", state)
+                    last_state = state
+                
+                if state == "Terminated":
+                    return exit_code
+                messages = batch_ai_hook.get_messages(resource_group, name)
+                last_message_logged = self._log_last(messages, last_message_logged)
+                
+                if state == "Running":
+                    try:
+                        logs = batch_ai_hook.get_logs(resource_group, name)
+                        last_line_logged = self._log_last(logs, last_line_logged)
+                    except CloudError as err:
+                        self.log.exception("Exception while getting logs from "
+                                           "container instance, retrying...")
+           
+            except CloudError as err:
+                if 'ResourceNotFound' in str(err):
+                    self.log.warning("ResourceNotFound, container is probably removed "
+                                     "by another process "
+                                     "(make sure that the name is unique).")
+                    return 1
+                else:
+                    self.log.exception("Exception while getting container groups")
+            
+            except Exception:
+                self.log.exception("Exception while getting container groups")
+            sleep(1)
+        raise AirflowTaskTimeout("Did not complete on time")
 
     # def _log_last(self, logs, last_line_logged):
     #     if logs:

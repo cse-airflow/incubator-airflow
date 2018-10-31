@@ -44,8 +44,6 @@ except ImportError:
 #         'eastus',
 #         environment_variables={},
 #         volumes=[],
-#         memory_in_gb=2.0,
-#         cpu=1.0,
 #         task_id='test_operator'
 #         )
 #     print "testing execute of batch ai operator....."
@@ -64,8 +62,6 @@ class TestAzurBatchAIOperator(unittest.TestCase):
                                     'eastus',
                                     environment_variables={},
                                     volumes=[],
-                                    memory_in_gb=2.0,
-                                    cpu=1.0,
                                     task_id='test_operator')
         self.batch.execute()
          
@@ -88,8 +84,6 @@ class TestAzurBatchAIOperator(unittest.TestCase):
                                     'eastus',
                                     environment_variables={},
                                     volumes=[],
-                                    memory_in_gb=2.0,
-                                    cpu=1.0,
                                     task_id='test_operator')
         # self.batch.return_value.get_state_exitcode.return_value = "Terminated", 1
         with self.assertRaises(AirflowException):

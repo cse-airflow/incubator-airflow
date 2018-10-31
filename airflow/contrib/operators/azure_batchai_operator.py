@@ -62,44 +62,44 @@ class AzureBatchAIOperator(BaseOperator):
     :param bai_conn_id: connection id of a service principal which will be used
         to start the batch ai cluster
     :type bai_conn_id: str
-    :param registry_conn_id: connection id of a user which can login to a
-        private docker registry. If None, we assume a public registry
-    :type registry_conn_id: str
-    :param resource_group: name of the resource group wherein this container
-        instance should be started
+    :param resource_group: name of the resource group wherein this cluster
+        should be started
     :type resource_group: str
-    :param name: name of the batch ai cluster
-    :type name: str
-    :param image: the docker image to be used
-    :type image: str
+    :param workspace_name: name of the workspace wherein this cluster
+        should be started
+    :type workspace_name: str
+    :param cluster_name: name of the batch ai cluster
+    :type cluster_name: str
     :param location: the location wherein this cluster should be started
     :type location: str
     :param: environment_variables: key,value pairs containing environment variables
-        which will be passed to the running container
+        which will be passed to the running container, including selected username and password
     :type: environment_variables: dict
-    :param: volumes: list of volumes to be mounted to the container.
+    :param: volumes: list of volumes to be mounted to the cluster.
         Currently only Azure Fileshares are supported.
     :type: volumes: list[<conn_id, account_name, share_name, mount_path, read_only>]
-    :param: memory_in_gb: the amount of memory to allocate to this container
-    :type: memory_in_gb: double
-    :param: cpu: the number of cpus to allocate to this container
-    :type: cpu: double
+    :param: publisher: publisher of the image to be used in the cluster
+    :type: publisher: str
+    :param: offer: offer of the image to be used in the cluster
+    :type: offer: str
+    :param: sku: sku of the image to be used in the cluster
+    :type: sku: str
+    :param: version: publisher of the image to be used in the cluster
+    :type: version: str
      :Example:
      >>>  a = AzureBatchAIOperator(
                 'azure_service_principal',
-                'azure_registry_user',
                 'my-resource-group',
-                'my-container-name-{{ ds }}',
-                'myprivateregistry.azurecr.io/my_container:latest',
+                'my-workspace-name-{{ ds }}',
+                'my-cluster-name',
                 'westeurope',
-                {'EXECUTION_DATE': '{{ ds }}'},
+                {'USERNAME': '{{ ds }}',
+                 'PASSWORD': '{{ ds }}},
                 [('azure_wasb_conn_id',
                   'my_storage_container',
                   'my_fileshare',
                   '/input-data',
                   True),],
-                memory_in_gb=14.0,
-                cpu=4.0,
                 task_id='start_container'
             )
     """
@@ -107,8 +107,8 @@ class AzureBatchAIOperator(BaseOperator):
     template_fields = ('name', 'environment_variables')
     template_ext = tuple()
     def __init__(self, bai_conn_id, resource_group, workspace_name, cluster_name, location,
-                environment_variables={}, volumes=[], memory_in_gb=2.0, cpu=1.0,
-                *args, **kwargs):
+                environment_variables={}, volumes=[], publisher='Canonical', offer='UbuntuServer',
+                sku='16.04-LTS', version='latest', *args, **kwargs):
         self.bai_conn_id = bai_conn_id
         self.resource_group = resource_group
         self.workspace_name = workspace_name
@@ -116,8 +116,10 @@ class AzureBatchAIOperator(BaseOperator):
         self.location = location
         self.environment_variables = environment_variables
         self.volumes = volumes
-        self.memory_in_gb = memory_in_gb
-        self.cpu = cpu
+        self.publisher = publisher
+        self.offer = offer
+        self.sku = sku
+        self.version = version
         super(AzureBatchAIOperator, self).__init__(*args, **kwargs)
 
     def execute(self):
@@ -128,13 +130,9 @@ class AzureBatchAIOperator(BaseOperator):
         resource_client.resource_groups.create_or_update(self.resource_group, resource_group_params) 
 
         try:
-            self.log.info("Starting Batch AI cluster with %.1f cpu %.1f mem",
-                          self.cpu, self.memory_in_gb)
+            self.log.info("Starting Batch AI cluster with offer %d and sku %d mem",
+                          self.offer, self.sku)
             
-            # manual_scale_settings = ManualScaleSettings(
-            #     target_node_count=0,
-            #     node_deallocation_option='requeue')
-
             auto_scale_settings = AutoScaleSettings(
                 minimum_node_count=0,
                 maximum_node_count=10,
@@ -144,33 +142,27 @@ class AzureBatchAIOperator(BaseOperator):
                 auto_scale=auto_scale_settings)
 
             image_reference = ImageReference(
-                publisher='Canonical',
-                offer='UbuntuServer',
-                sku='16.04-LTS',
-                version='latest')
+                publisher=self.publisher,
+                offer=self.offer,
+                sku=self.sku,
+                version=self.version)
 
             vm_configuration = VirtualMachineConfiguration(
                 image_reference=image_reference)
 
             username=os.environ['USERNAME'],
-            # ssh_key=os.environ['SSH_KEY'],
             password=os.environ['PASSWORD']
 
             user_account_settings = UserAccountSettings(
                 admin_user_name=username,
-                # ssh_key=ssh_key,
                 admin_user_password=password)
-
-            # subnet = ResourceId('subnet_id')
 
             parameters = ClusterCreateParameters(
                 vm_size='STANDARD_NC6',
                 vm_priority='dedicated',
                 scale_settings=scale_settings,
                 virtual_machine_configuration=vm_configuration,
-                # node_setup=node_setup,
                 user_account_settings=user_account_settings)
-                # subnet=subnet)
 
             batch_ai_hook.create(self.resource_group, self.workspace_name, self.cluster_name, self.location, parameters)
             self.log.info("Cluster started")

@@ -37,16 +37,13 @@ dag = DAG(
 
 cmd = 'ls -l'
 run_this_first = AzureBatchAIOperator(
-    'azure_batchai_default',  #TODO: add this to utils
-    None,  # Registry connection
+    'azure_batchai_default',
     'batch-ai-test-rg',
-    'batch-ai-cluster',
-    'image-name',
+    'batch-ai-workspace-name',
+    'batch-ai-cluster-name,
     'WestUS2',
     environment_variables={},
     volumes=[],
-    memory_in_gb=2.0,
-    cpu=1.0,
     task_id='run_this_first',
     dag=dag
     )

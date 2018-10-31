@@ -161,6 +161,25 @@ AzureDataLakeHook
 
 .. autoclass:: airflow.contrib.hooks.azure_data_lake_hook.AzureDataLakeHook
 
+Azure Batch AI
+''''''''''''''
+ Azure Batch AI provides a method to run a docker container without having to worry
+about managing infrastructure. The AzureBatchAIHook requires a service principal. The
+credentials for this principal can either be defined in the extra field `key_path`, as an 
+environment variable named `AZURE_AUTH_LOCATION`, or by providing a login/password and tenantId in extras.
+
+The AzureBatchAIHook requires a host/login/password to be defined in the connection.
+- :ref:`AzureBatchAIOperator` : Start/Monitor a new Azure Batch Workspace and Cluster.
+- :ref:`AzureBatchAIHook` : Wrapper around a single Batch AI workspace.
+
+AzureBatchAIOperator
+""""""""""""""""""""
+ .. autoclass:: airflow.contrib.operators.azure_container_instances_operator.AzureContainerInstancesOperator
+
+AzureBatchAIHook
+""""""""""""""""
+ .. autoclass:: airflow.contrib.hooks.azure_container_hook.AzureContainerInstanceHook
+
 .. _AWS:
 
 AWS: Amazon Web Services

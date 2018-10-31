@@ -33,204 +33,101 @@ except ImportError:
     except ImportError:
         mock = None
 
-# RESPONSE_WITHOUT_FAILURES = {
-#     "jobName": "51455483-c62c-48ac-9b88-53a6a725baa3",
-#     "jobId": "8ba9d676-4108-4474-9dca-8bbac1da9b19"
-# }
+# TEST SCRIPT BELOW
 
-def main():
-    test_operator = AzureBatchAIOperator(
-        'azure_batchai_default',
-        None,  # Registry connection
-        'batch-ai-test-rg',
-        'batch-ai-workspace',
-        'batch-ai-cluster',
-        'eastus',
-        environment_variables={},
-        volumes=[],
-        memory_in_gb=2.0,
-        cpu=1.0,
-        task_id='test_operator'
-        )
-    print "testing execute of batch ai operator....."
-    test_operator.execute()
+# def main():
+#     test_operator = AzureBatchAIOperator(
+#         'azure_batchai_default',
+#         'batch-ai-test-rg',
+#         'batch-ai-workspace',
+#         'batch-ai-cluster',
+#         'eastus',
+#         environment_variables={},
+#         volumes=[],
+#         memory_in_gb=2.0,
+#         cpu=1.0,
+#         task_id='test_operator'
+#         )
+#     print "testing execute of batch ai operator....."
+#     test_operator.execute()
 
 
-class TestAzureatchAIOperator(unittest.TestCase):
+class TestAzurBatchAIOperator(unittest.TestCase):
 
     @mock.patch('airflow.contrib.operators.azure_batchai_operator.AzureBatchAIHook')
-    def setUp(self, azure_batchai_hook_mock):
-        configuration.load_test_config()
+    # def setUp(self, azure_batchai_hook_mock):
+    #     configuration.load_test_config()
 
-        self.azure_batchai_hook_mock = azure_batchai_hook_mock
-        self.batch = AzureBatchAIOperator(
-            # TODO: fix this so it matches...also fix operator
-            task_id='task',
-            job_name='51455483-c62c-48ac-9b88-53a6a725baa3',
-            job_queue='queue',
-            job_definition='hello-world',
-            max_retries=5,
-            overrides={},
-            aws_conn_id=None,
-            region_name='eu-west-1')
+    #     self.azure_batchai_hook_mock = azure_batchai_hook_mock
+    #     self.batch = AzureBatchAIOperator(
+    #         # TODO: fix this so it matches...also fix operator
+    #         bai_conn_id='azure_batchai_default',
+    #         resource_group='batch-ai-test-rg',
+    #         workspace_name='batch-ai-workspace',
+    #         cluster_name='batch-ai-cluster',
+    #         location='eastus',
+    #         environment_variables={},
+    #         volumes=[],
+    #         memory_in_gb=2.0,
+    #         cpu=1.0,
+    #         task_id='test_operator')
 
-#     def test_init(self):
-#         self.assertEqual(self.batch.job_name, '51455483-c62c-48ac-9b88-53a6a725baa3')
-#         self.assertEqual(self.batch.job_queue, 'queue')
-#         self.assertEqual(self.batch.job_definition, 'hello-world')
-#         self.assertEqual(self.batch.max_retries, 5)
-#         self.assertEqual(self.batch.overrides, {})
-#         self.assertEqual(self.batch.region_name, 'eu-west-1')
-#         self.assertEqual(self.batch.aws_conn_id, None)
-#         self.assertEqual(self.batch.hook, self.aws_hook_mock.return_value)
-
-#         self.aws_hook_mock.assert_called_once_with(aws_conn_id=None)
-
-#     def test_template_fields_overrides(self):
-#         self.assertEqual(self.batch.template_fields, ('job_name', 'overrides',))
-
-#     @mock.patch.object(AWSBatchOperator, '_wait_for_task_ended')
-#     @mock.patch.object(AWSBatchOperator, '_check_success_task')
-#     def test_execute_without_failures(self, check_mock, wait_mock):
-#         client_mock = self.aws_hook_mock.return_value.get_client_type.return_value
-#         client_mock.submit_job.return_value = RESPONSE_WITHOUT_FAILURES
-
-#         self.batch.execute(None)
-
-#         self.aws_hook_mock.return_value.get_client_type.assert_called_once_with('batch',
-#                                                                                 region_name='eu-west-1')
-#         client_mock.submit_job.assert_called_once_with(
-#             jobQueue='queue',
-#             jobName='51455483-c62c-48ac-9b88-53a6a725baa3',
-#             containerOverrides={},
-#             jobDefinition='hello-world'
-#         )
-
-#         wait_mock.assert_called_once_with()
-#         check_mock.assert_called_once_with()
-#         self.assertEqual(self.batch.jobId, '8ba9d676-4108-4474-9dca-8bbac1da9b19')
-
-#     def test_execute_with_failures(self):
-#         client_mock = self.aws_hook_mock.return_value.get_client_type.return_value
-#         client_mock.submit_job.return_value = ""
-
-#         with self.assertRaises(AirflowException):
-#             self.batch.execute(None)
-
-#         self.aws_hook_mock.return_value.get_client_type.assert_called_once_with('batch',
-#                                                                                 region_name='eu-west-1')
-#         client_mock.submit_job.assert_called_once_with(
-#             jobQueue='queue',
-#             jobName='51455483-c62c-48ac-9b88-53a6a725baa3',
-#             containerOverrides={},
-#             jobDefinition='hello-world'
-#         )
-
-#     def test_wait_end_tasks(self):
-#         client_mock = mock.Mock()
-#         self.batch.jobId = '8ba9d676-4108-4474-9dca-8bbac1da9b19'
-#         self.batch.client = client_mock
-
-#         self.batch._wait_for_task_ended()
-
-#         client_mock.get_waiter.assert_called_once_with('job_execution_complete')
-#         client_mock.get_waiter.return_value.wait.assert_called_once_with(
-#             jobs=['8ba9d676-4108-4474-9dca-8bbac1da9b19']
-#         )
-#         self.assertEquals(sys.maxsize, client_mock.get_waiter.return_value.config.max_attempts)
-
-#     def test_check_success_tasks_raises(self):
-#         client_mock = mock.Mock()
-#         self.batch.jobId = '8ba9d676-4108-4474-9dca-8bbac1da9b19'
-#         self.batch.client = client_mock
-
-#         client_mock.describe_jobs.return_value = {
-#             'jobs': []
-#         }
-
-#         with self.assertRaises(Exception) as e:
-#             self.batch._check_success_task()
-
-#         # Ordering of str(dict) is not guaranteed.
-#         self.assertIn('No job found for ', str(e.exception))
-
-#     def test_check_success_tasks_raises_failed(self):
-#         client_mock = mock.Mock()
-#         self.batch.jobId = '8ba9d676-4108-4474-9dca-8bbac1da9b19'
-#         self.batch.client = client_mock
-
-#         client_mock.describe_jobs.return_value = {
-#             'jobs': [{
-#                 'status': 'FAILED',
-#                 'statusReason': 'This is an error reason',
-#                 'attempts': [{
-#                     'exitCode': 1
-#                 }]
-#             }]
-#         }
-
-#         with self.assertRaises(Exception) as e:
-#             self.batch._check_success_task()
-
-#         # Ordering of str(dict) is not guaranteed.
-#         self.assertIn('Job failed with status ', str(e.exception))
-
-#     def test_check_success_tasks_raises_pending(self):
-#         client_mock = mock.Mock()
-#         self.batch.jobId = '8ba9d676-4108-4474-9dca-8bbac1da9b19'
-#         self.batch.client = client_mock
-
-#         client_mock.describe_jobs.return_value = {
-#             'jobs': [{
-#                 'status': 'RUNNABLE'
-#             }]
-#         }
-
-#         with self.assertRaises(Exception) as e:
-#             self.batch._check_success_task()
-
-#         # Ordering of str(dict) is not guaranteed.
-#         self.assertIn('This task is still pending ', str(e.exception))
-
-#     def test_check_success_tasks_raises_multiple(self):
-#         client_mock = mock.Mock()
-#         self.batch.jobId = '8ba9d676-4108-4474-9dca-8bbac1da9b19'
-#         self.batch.client = client_mock
-
-#         client_mock.describe_jobs.return_value = {
-#             'jobs': [{
-#                 'status': 'FAILED',
-#                 'statusReason': 'This is an error reason',
-#                 'attempts': [{
-#                     'exitCode': 1
-#                 }, {
-#                     'exitCode': 10
-#                 }]
-#             }]
-#         }
-
-#         with self.assertRaises(Exception) as e:
-#             self.batch._check_success_task()
-
-#         # Ordering of str(dict) is not guaranteed.
-#         self.assertIn('Job failed with status ', str(e.exception))
-
-#     def test_check_success_task_not_raises(self):
-#         client_mock = mock.Mock()
-#         self.batch.jobId = '8ba9d676-4108-4474-9dca-8bbac1da9b19'
-#         self.batch.client = client_mock
-
-#         client_mock.describe_jobs.return_value = {
-#             'jobs': [{
-#                 'status': 'SUCCEEDED'
-#             }]
-#         }
-
-#         self.batch._check_success_task()
-
-#         # Ordering of str(dict) is not guaranteed.
-#         client_mock.describe_jobs.assert_called_once_with(jobs=['8ba9d676-4108-4474-9dca-8bbac1da9b19'])
-
+    def test_execute(self, bai_mock):
+        bai_mock.return_value.get_state_exitcode.return_value = "Terminated", 0
+        self.batch = AzureBatchAIOperator('azure_batchai_default',
+                                    'batch-ai-test-rg',
+                                    'batch-ai-workspace',
+                                    'batch-ai-cluster',
+                                    'eastus',
+                                    environment_variables={},
+                                    volumes=[],
+                                    memory_in_gb=2.0,
+                                    cpu=1.0,
+                                    task_id='test_operator')
+        self.batch.execute()
+         
+        # self.assertEqual(aci_mock.return_value.create_or_update.call_count, 1)
+        # (called_rg, called_cn, called_cg), _ = aci_mock.return_value.create_or_update.call_args
+        self.assertEqual(self.batch.resource_group, 'batch-ai-test-rg')
+        self.assertEqual(self.batch.workspace_name, 'batch-ai-workspace')
+        self.assertEqual(self.batch.cluster_name, 'batch-ai-cluster')
+        self.assertEqual(self.batch.location, 'eastus')
+        # self.assertEqual(called_cg.restart_policy, 'Never')
+        # self.assertEqual(called_cg.os_type, 'Linux')
+        #  called_cg_container = called_cg.containers[0]
+        # self.assertEqual(called_cg_container.name, 'container-name')
+        # self.assertEqual(called_cg_container.image, 'container-image')
+        # self.assertEqual(aci_mock.return_value.delete.call_count, 1)
+    
+    # @mock.patch('airflow.contrib.operators.azure_batch_ai_operator.AzureBatchAIHook')
+    
+    # def test_execute_with_failures(self, aci_mock):
+    #     aci_mock.return_value.get_state_exitcode.return_value = "Terminated", 1
+    #     aci = AzureContainerInstancesOperator(None, None,
+    #                                           'resource-group', 'container-name',
+    #                                           'container-image', 'region',
+    #                                           task_id='task')
+    #     with self.assertRaises(AirflowException):
+    #         aci.execute(None)
+    #      self.assertEqual(aci_mock.return_value.delete.call_count, 1)
+    #  @mock.patch("airflow.contrib.operators."
+    #             "azure_container_instances_operator.AzureContainerInstanceHook")
+    
+    # def test_execute_with_messages_logs(self, aci_mock):
+    #     aci_mock.return_value.get_state_exitcode.side_effect = [("Running", 0),
+    #                                                             ("Terminated", 0)]
+    #     aci_mock.return_value.get_messages.return_value = ["test", "messages"]
+    #     aci_mock.return_value.get_logs.return_value = ["test", "logs"]
+    #     aci = AzureContainerInstancesOperator(None, None,
+    #                                           'resource-group', 'container-name',
+    #                                           'container-image', 'region',
+    #                                           task_id='task')
+    #     aci.execute(None)
+    #      self.assertEqual(aci_mock.return_value.create_or_update.call_count, 1)
+    #     self.assertEqual(aci_mock.return_value.get_state_exitcode.call_count, 2)
+    #     self.assertEqual(aci_mock.return_value.get_messages.call_count, 1)
+    #     self.assertEqual(aci_mock.return_value.get_logs.call_count, 1)
+    #     self.assertEqual(aci_mock.return_value.delete.call_count, 1)
 
 if __name__ == '__main__':
-    main()
+    unittest.main()

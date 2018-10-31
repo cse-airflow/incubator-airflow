@@ -106,11 +106,10 @@ class AzureBatchAIOperator(BaseOperator):
 
     template_fields = ('name', 'environment_variables')
     template_ext = tuple()
-    def __init__(self, bai_conn_id, registry_conn_id, resource_group, workspace_name, cluster_name, location,
+    def __init__(self, bai_conn_id, resource_group, workspace_name, cluster_name, location,
                 environment_variables={}, volumes=[], memory_in_gb=2.0, cpu=1.0,
                 *args, **kwargs):
         self.bai_conn_id = bai_conn_id
-        self.registry_conn_id = registry_conn_id
         self.resource_group = resource_group
         self.workspace_name = workspace_name
         self.cluster_name = cluster_name
@@ -123,37 +122,11 @@ class AzureBatchAIOperator(BaseOperator):
 
     def execute(self):
         batch_ai_hook = AzureBatchAIHook(self.bai_conn_id)
-        
-        # if self.registry_conn_id:
-        #     registry_hook = AzureContainerRegistryHook(self.registry_conn_id)
-        #     image_registry_credentials = [registry_hook.connection, ]
-        # else:
-        #     image_registry_credentials = None
-
-        # creds = ServicePrincipalCredentials(
-        # client_id=aad_client_id, secret=aad_secret, tenant=aad_tenant)
 
         resource_client = get_client_from_auth_file(ResourceManagementClient)
         resource_group_params = {'location': self.location }
         resource_client.resource_groups.create_or_update(self.resource_group, resource_group_params) 
 
-        # batchai_client = batchai.BatchAIManagementClient(
-        # credentials=creds, subscription_id=subscription_id)
-
-        # environment_variables = []
-        # for key, value in self.environment_variables.items():
-        #     environment_variables.append(EnvironmentVariable(key, value))
-
-        # volumes = []
-        # volume_mounts = []
-        # for conn_id, account_name, share_name, mount_path, read_only in self.volumes:
-        #     hook = AzureContainerVolumeHook(conn_id)
-        #     mount_name = "mount-%d" % len(volumes)
-        #     volumes.append(hook.get_file_volume(mount_name,
-        #                                         share_name,
-        #                                         account_name,
-        #                                         read_only))
-        #     volume_mounts.append(VolumeMount(mount_name, mount_path, read_only))
         try:
             self.log.info("Starting Batch AI cluster with %.1f cpu %.1f mem",
                           self.cpu, self.memory_in_gb)

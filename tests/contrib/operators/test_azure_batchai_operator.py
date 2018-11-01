@@ -33,6 +33,26 @@ except ImportError:
     except ImportError:
         mock = None
 
+<<<<<<< HEAD
+=======
+# TEST SCRIPT BELOW
+
+# def main():
+#     test_operator = AzureBatchAIOperator(
+#         'azure_batchai_default',
+#         'batch-ai-test-rg',
+#         'batch-ai-workspace',
+#         'batch-ai-cluster',
+#         'eastus',
+#         environment_variables={},
+#         volumes=[],
+#         task_id='test_operator'
+#         )
+#     print "testing execute of batch ai operator....."
+#     test_operator.execute()
+
+
+>>>>>>> 4ee4c3fd9e0d038423672d60909682f56a8c4738
 class TestAzurBatchAIOperator(unittest.TestCase):
 
     @mock.patch('airflow.contrib.operators.azure_batchai_operator.AzureBatchAIHook')
@@ -47,7 +67,13 @@ class TestAzurBatchAIOperator(unittest.TestCase):
                                     volumes=[],
                                     task_id='test_operator')
         self.batch.execute()
+<<<<<<< HEAD
         
+=======
+         
+        # self.assertEqual(aci_mock.return_value.create_or_update.call_count, 1)
+        # (called_rg, called_cn, called_cg), _ = aci_mock.return_value.create_or_update.call_args
+>>>>>>> 4ee4c3fd9e0d038423672d60909682f56a8c4738
         self.assertEqual(self.batch.resource_group, 'batch-ai-test-rg')
         self.assertEqual(self.batch.workspace_name, 'batch-ai-workspace')
         self.assertEqual(self.batch.cluster_name, 'batch-ai-cluster')
@@ -66,9 +92,36 @@ class TestAzurBatchAIOperator(unittest.TestCase):
                                     environment_variables={},
                                     volumes=[],
                                     task_id='test_operator')
+<<<<<<< HEAD
 
         with self.assertRaises(AirflowException):
             self.batch.execute()
+=======
+        # self.batch.return_value.get_state_exitcode.return_value = "Terminated", 1
+        with self.assertRaises(AirflowException):
+            self.batch.execute()
+        # self.assertEqual(aci_mock.return_value.delete.call_count, 1)
+
+
+    #  @mock.patch("airflow.contrib.operators."
+    #             "azure_container_instances_operator.AzureContainerInstanceHook")
+    
+    # def test_execute_with_messages_logs(self, aci_mock):
+    #     aci_mock.return_value.get_state_exitcode.side_effect = [("Running", 0),
+    #                                                             ("Terminated", 0)]
+    #     aci_mock.return_value.get_messages.return_value = ["test", "messages"]
+    #     aci_mock.return_value.get_logs.return_value = ["test", "logs"]
+    #     aci = AzureContainerInstancesOperator(None, None,
+    #                                           'resource-group', 'container-name',
+    #                                           'container-image', 'region',
+    #                                           task_id='task')
+    #     aci.execute(None)
+    #      self.assertEqual(aci_mock.return_value.create_or_update.call_count, 1)
+    #     self.assertEqual(aci_mock.return_value.get_state_exitcode.call_count, 2)
+    #     self.assertEqual(aci_mock.return_value.get_messages.call_count, 1)
+    #     self.assertEqual(aci_mock.return_value.get_logs.call_count, 1)
+    #     self.assertEqual(aci_mock.return_value.delete.call_count, 1)
+>>>>>>> 4ee4c3fd9e0d038423672d60909682f56a8c4738
 
 if __name__ == '__main__':
     unittest.main()

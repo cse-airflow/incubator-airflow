@@ -81,10 +81,12 @@ class AzureBatchAIHook(BaseHook):
                                                         workspace_name,
                                                         cluster_name,
                                                         raw=True).response.json()
-        cluster = response['properties']['cluster']
-        instance_view = cluster[0]['properties'].get('instanceView', {})
-        current_state = instance_view.get('currentState', {})
-        return current_state.get('state'), current_state.get('exitCode', 0)
+        cluster = response
+        # cluster = response['properties']['cluster']
+        # instance_view = cluster[0]['properties'].get('instanceView', {})
+        # current_state = instance_view.get('currentState', {})
+        # return current_state.get('state'), current_state.get('exitCode', 0)
+        return cluster
 
     def get_messages(self, resource_group, workspace_name, cluster_name):
         response = self.connection.clusters.get(resource_group,

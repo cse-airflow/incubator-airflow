@@ -184,7 +184,7 @@ class AzureBatchAIOperator(BaseOperator):
         last_line_logged = None
         for _ in range(43200):
             try:
-                state, exit_code = batch_ai_hook.get_state_exitcode(resource_group, name)
+                state, exit_code = batch_ai_hook.get_state_exitcode(self.resource_group, self.workspace_name, self.cluster_name)
                 
                 if state != last_state:
                     self.log.info("Cluster state changed to %s", state)
@@ -192,12 +192,12 @@ class AzureBatchAIOperator(BaseOperator):
                 
                 if state == "Terminated":
                     return exit_code
-                messages = batch_ai_hook.get_messages(resource_group, name)
+                messages = batch_ai_hook.get_messages(self.resource_group, self.workspace_name, self.cluster_name)
                 last_message_logged = self._log_last(messages, last_message_logged)
                 
                 if state == "Running":
                     try:
-                        logs = batch_ai_hook.get_logs(resource_group, name)
+                        logs = batch_ai_hook.get_messages(self.resource_group, self.workspace_name, self.cluster_name)
                         last_line_logged = self._log_last(logs, last_line_logged)
                     except CloudError as err:
                         self.log.exception("Exception while getting logs from cluster, retrying...")
@@ -210,7 +210,7 @@ class AzureBatchAIOperator(BaseOperator):
                 else:
                     self.log.exception("Exception while getting cluster")
             
-            except Exception:
+            except Exception as e:
                 self.log.exception("Exception while getting cluster")
             sleep(1)
         raise AirflowTaskTimeout("Did not complete on time")

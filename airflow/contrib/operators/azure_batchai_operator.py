@@ -23,8 +23,7 @@ import os
 from time import sleep
 
 from airflow.contrib.hooks.azure_batchai_hook import (AzureBatchAIHook)
-                                                        # AzureContainerRegistryHook,
-                                                        # AzureContainerVolumeHook)
+
 from airflow.exceptions import AirflowException, AirflowTaskTimeout
 from airflow.models import BaseOperator
 
@@ -144,7 +143,7 @@ class AzureBatchAIOperator(BaseOperator):
             vm_configuration = VirtualMachineConfiguration(
                 image_reference=image_reference)
 
-            username=os.environ['USERNAME'],
+            username=os.environ['USERNAME']
             password=os.environ['PASSWORD']
 
             user_account_settings = UserAccountSettings(
@@ -188,7 +187,7 @@ class AzureBatchAIOperator(BaseOperator):
                 state, exit_code = batch_ai_hook.get_state_exitcode(resource_group, name)
                 
                 if state != last_state:
-                    self.log.info("Container group state changed to %s", state)
+                    self.log.info("Cluster state changed to %s", state)
                     last_state = state
                 
                 if state == "Terminated":
@@ -201,19 +200,17 @@ class AzureBatchAIOperator(BaseOperator):
                         logs = batch_ai_hook.get_logs(resource_group, name)
                         last_line_logged = self._log_last(logs, last_line_logged)
                     except CloudError as err:
-                        self.log.exception("Exception while getting logs from "
-                                           "container instance, retrying...")
+                        self.log.exception("Exception while getting logs from cluster, retrying...")
            
             except CloudError as err:
                 if 'ResourceNotFound' in str(err):
-                    self.log.warning("ResourceNotFound, container is probably removed "
-                                     "by another process "
+                    self.log.warning("ResourceNotFound, cluster is probably removed by another process "
                                      "(make sure that the name is unique).")
                     return 1
                 else:
-                    self.log.exception("Exception while getting container groups")
+                    self.log.exception("Exception while getting cluster")
             
             except Exception:
-                self.log.exception("Exception while getting container groups")
+                self.log.exception("Exception while getting cluster")
             sleep(1)
         raise AirflowTaskTimeout("Did not complete on time")

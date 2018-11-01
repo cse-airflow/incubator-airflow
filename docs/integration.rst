@@ -174,11 +174,11 @@ The AzureBatchAIHook requires a host/login/password to be defined in the connect
 
 AzureBatchAIOperator
 """"""""""""""""""""
- .. autoclass:: airflow.contrib.operators.azure_container_instances_operator.AzureContainerInstancesOperator
+ .. autoclass:: airflow.contrib.operators.azure_batchai_operator.AzureContainerInstancesOperator
 
 AzureBatchAIHook
 """"""""""""""""
- .. autoclass:: airflow.contrib.hooks.azure_container_hook.AzureContainerInstanceHook
+ .. autoclass:: airflow.contrib.hooks.azure_batchai_hook.AzureContainerInstanceHook
 
 .. _AWS:
 

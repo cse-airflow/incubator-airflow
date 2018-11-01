@@ -33,7 +33,7 @@ except ImportError:
     except ImportError:
         mock = None
 
-class TestAzurBatchAIOperator(unittest.TestCase):
+class TestAzureBatchAIOperator(unittest.TestCase):
 
     @mock.patch('airflow.contrib.operators.azure_batchai_operator.AzureBatchAIHook')
     def test_execute(self, abai_mock):

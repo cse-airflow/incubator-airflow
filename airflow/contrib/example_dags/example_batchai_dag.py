@@ -35,7 +35,6 @@ dag = DAG(
     default_args=args,
     schedule_interval="@daily")
 
-cmd = 'ls -l'
 batch_ai_node = AzureBatchAIOperator(
     'azure_batchai_default',
     'batch-ai-test-rg',

@@ -19,7 +19,7 @@
 
 import unittest
 
-from airflow.contrib.operators.aks_operator import AzureKubernetesKubernetesOperator
+from airflow.contrib.operators.aks_operator import AzureKubernetesOperator
 from msrestazure.azure_exceptions import CloudError
 
 try:
@@ -35,7 +35,7 @@ class AzureKubernetesKubernetesOperatorTest(unittest.TestCase):
     @mock.patch('airflow.contrib.operators.aks_operator.AzureKubernetesServiceHook')
     def test_execute_existing_kubernetes(self, aks_hook_mock):
 
-        aks = AzureKubernetesKubernetesOperator(ci_conn_id=None,
+        aks = AzureKubernetesOperator(ci_conn_id=None,
                                                 resource_group="resource_group",
                                                 name="name",
                                                 ssh_key_value=None,
@@ -54,7 +54,7 @@ class AzureKubernetesKubernetesOperatorTest(unittest.TestCase):
     @mock.patch('airflow.contrib.operators.aks_operator.AzureKubernetesServiceHook')
     def test_execute_create_kubernetes(self, aks_hook_mock):
 
-        aks = AzureKubernetesKubernetesOperator(ci_conn_id=None,
+        aks = AzureKubernetesOperator(ci_conn_id=None,
                                                 resource_group="resource_group",
                                                 name="name",
                                                 ssh_key_value=None,

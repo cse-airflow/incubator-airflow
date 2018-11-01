@@ -18,7 +18,7 @@
 # under the License.
 
 from airflow import DAG
-from airflow.contrib.operators.aks_operator import AzureKubernetesKubernetesOperator
+from airflow.contrib.operators.aks_operator import AzureKubernetesOperator
 from datetime import datetime, timedelta
 
 seven_days_ago = datetime.combine(datetime.today() - timedelta(7),
@@ -40,7 +40,7 @@ dag = DAG(
     schedule_interval=None,
 )
 
-start_aks_container = AzureKubernetesKubernetesOperator(
+start_aks_container = AzureKubernetesOperator(
     task_id="start_aks_container",
     ci_conn_id='azure_kubernetes_default',
     resource_group="apraotest1",

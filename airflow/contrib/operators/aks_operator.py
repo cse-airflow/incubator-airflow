@@ -36,7 +36,7 @@ from msrestazure.azure_exceptions import CloudError
 logger = get_logger(__name__)
 
 
-class AzureKubernetesKubernetesOperator(BaseOperator):
+class AzureKubernetesOperator(BaseOperator):
     """
     Start a Azure Kubernetes Service
 
@@ -82,7 +82,7 @@ class AzureKubernetesKubernetesOperator(BaseOperator):
 
     :Example:
 
-    >>> a = AzureContainerInstancesOperator(ask_id="task",ci_conn_id='azure_kubernetes_default',
+    >>> a = AzureKubernetesOperator(task_id="task",ci_conn_id='azure_kubernetes_default',
             resource_group="my_resource_group",
             name="my_aks_container",
             ssh_key_value=None,
@@ -124,7 +124,7 @@ class AzureKubernetesKubernetesOperator(BaseOperator):
         self.node_osdisk_size = node_osdisk_size
         self.kubernetes_version = kubernetes_version
 
-        super(AzureKubernetesKubernetesOperator, self).__init__(*args, **kwargs)
+        super(AzureKubernetesOperator, self).__init__(*args, **kwargs)
 
     def execute(self, context):
         ci_hook = AzureKubernetesServiceHook(self.ci_conn_id)

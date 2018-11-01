@@ -35,7 +35,6 @@ class AzureBatchAIHook(BaseHook):
         if key_path:
             if key_path.endswith('.json'):
                 self.log.info('Getting connection using a JSON key file.')
-                print key_path
                 return get_client_from_auth_file(BatchAIManagementClient,
                                                  key_path)
             else:
@@ -45,7 +44,6 @@ class AzureBatchAIHook(BaseHook):
             key_path = os.environ.get('AZURE_AUTH_LOCATION')
             if key_path.endswith('.json'):
                 self.log.info('Getting connection using a JSON key file.')
-                print key_path
                 return get_client_from_auth_file(BatchAIManagementClient,
                                                  key_path)
             else:
@@ -58,7 +56,6 @@ class AzureBatchAIHook(BaseHook):
         )
 
         subscription_id = conn.extra_dejson['subscriptionId']
-        print "returning batch service client with creds....."
         return BatchAIManagementClient(credentials, str(subscription_id))
 
     def create(self, resource_group, workspace_name, cluster_name, location, parameters):
@@ -72,8 +69,6 @@ class AzureBatchAIHook(BaseHook):
                                           workspace_name,
                                           cluster_name,
                                           parameters)
-
-        print "cluster created"
                                                         
     def update(self, resource_group, workspace_name, cluster_name):
         print "updating cluster....."
@@ -86,8 +81,7 @@ class AzureBatchAIHook(BaseHook):
                                                         workspace_name,
                                                         cluster_name,
                                                         raw=True).response.json()
-        print "IN EXITCODE!!!"
-        cluster = response['properties']['cluster']      # TODO: check to see if 'cluster' is correct
+        cluster = response['properties']['cluster']
         instance_view = cluster[0]['properties'].get('instanceView', {})
         current_state = instance_view.get('currentState', {})
         return current_state.get('state'), current_state.get('exitCode', 0)
@@ -97,14 +91,9 @@ class AzureBatchAIHook(BaseHook):
                                                     workspace_name,
                                                     cluster_name,
                                                     raw=True).response.json()
-        cluster = response['properties']['cluster']      # TODO: check to see if 'cluster' is correct
+        cluster = response['properties']['cluster'] 
         instance_view = cluster[0]['properties'].get('instanceView', {})
         return [event['message'] for event in instance_view.get('events', [])]
-
-    # TODO: figure out how to get logs
-    # def get_logs(self, resource_group, name, tail=1000):
-    #     logs = self.connection.container_logs.list(resource_group, name, name, tail=tail)
-    #     return logs.content.splitlines(True)
 
     def delete(self, resource_group, workspace_name, cluster_name):
         self.connection.clusters.delete(resource_group, workspace_name, cluster_name)

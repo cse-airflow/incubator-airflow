@@ -39,7 +39,6 @@ from azure.mgmt.batchai.models import (ClusterCreateParameters,
                                         ScaleSettings,
                                         VirtualMachineConfiguration,
                                         ImageReference,
-                                        # SetupTasks,
                                         MountVolumes,
                                         KeyVaultSecretReference,
                                         AppInsightsReference,
@@ -95,11 +94,6 @@ class AzureBatchAIOperator(BaseOperator):
                 'westeurope',
                 {'USERNAME': '{{ ds }}',
                  'PASSWORD': '{{ ds }}},
-                [('azure_wasb_conn_id',
-                  'my_storage_container',
-                  'my_fileshare',
-                  '/input-data',
-                  True),],
                 task_id='start_container'
             )
     """
@@ -189,7 +183,7 @@ class AzureBatchAIOperator(BaseOperator):
         last_state = None
         last_message_logged = None
         last_line_logged = None
-        for _ in range(43200):  # roughly 12 hours
+        for _ in range(43200):
             try:
                 state, exit_code = batch_ai_hook.get_state_exitcode(resource_group, name)
                 
@@ -223,17 +217,3 @@ class AzureBatchAIOperator(BaseOperator):
                 self.log.exception("Exception while getting container groups")
             sleep(1)
         raise AirflowTaskTimeout("Did not complete on time")
-
-    # def _log_last(self, logs, last_line_logged):
-    #     if logs:
-    #         # determine the last line which was logged before
-    #         last_line_index = 0
-    #         for i in range(len(logs) - 1, -1, -1):
-    #             if logs[i] == last_line_logged:
-    #                 # this line is the same, hence print from i+1
-    #                 last_line_index = i + 1
-    #                 break
-    #          # log all new ones
-    #         for line in logs[last_line_index:]:
-    #             self.log.info(line.rstrip())
-    #         return logs[-1]

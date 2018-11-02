@@ -36,13 +36,13 @@ class AzureKubernetesKubernetesOperatorTest(unittest.TestCase):
     def test_execute_existing_kubernetes(self, aks_hook_mock):
 
         aks = AzureKubernetesOperator(ci_conn_id=None,
-                                                resource_group="resource_group",
-                                                name="name",
-                                                ssh_key_value=None,
-                                                dns_name_prefix=None,
-                                                location="location",
-                                                tags=None,
-                                                task_id='task')
+                                      resource_group="resource_group",
+                                      name="name",
+                                      ssh_key_value=None,
+                                      dns_name_prefix=None,
+                                      location="location",
+                                      tags=None,
+                                      task_id='task')
 
         client_hook = aks_hook_mock.return_value.get_conn.return_value
 
@@ -55,13 +55,13 @@ class AzureKubernetesKubernetesOperatorTest(unittest.TestCase):
     def test_execute_create_kubernetes(self, aks_hook_mock):
 
         aks = AzureKubernetesOperator(ci_conn_id=None,
-                                                resource_group="resource_group",
-                                                name="name",
-                                                ssh_key_value=None,
-                                                dns_name_prefix=None,
-                                                location="location",
-                                                tags=None,
-                                                task_id='task')
+                                      resource_group="resource_group",
+                                      name="name",
+                                      ssh_key_value=None,
+                                      dns_name_prefix=None,
+                                      location="location",
+                                      tags=None,
+                                      task_id='task')
 
         client_hook = aks_hook_mock.return_value.get_conn.return_value
 

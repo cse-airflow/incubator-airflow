@@ -18,10 +18,8 @@
 # under the License.
 #
 
-import sys
 import unittest
 
-from airflow import configuration
 from airflow.exceptions import AirflowException
 from airflow.contrib.operators.azure_batchai_operator import AzureBatchAIOperator
 
@@ -33,42 +31,44 @@ except ImportError:
     except ImportError:
         mock = None
 
+
 class TestAzureBatchAIOperator(unittest.TestCase):
 
     @mock.patch('airflow.contrib.operators.azure_batchai_operator.AzureBatchAIHook')
     def test_execute(self, abai_mock):
         abai_mock.return_value.get_state_exitcode.return_value = "Terminated", 0
         self.batch = AzureBatchAIOperator('azure_batchai_default',
-                                    'batch-ai-test-rg',
-                                    'batch-ai-workspace',
-                                    'batch-ai-cluster',
-                                    'eastus',
-                                    environment_variables={},
-                                    volumes=[],
-                                    task_id='test_operator')
+                                          'batch-ai-test-rg',
+                                          'batch-ai-workspace',
+                                          'batch-ai-cluster',
+                                          'eastus',
+                                          'auto',
+                                          environment_variables={},
+                                          volumes=[],
+                                          task_id='test_operator')
         self.batch.execute()
-        
+
         self.assertEqual(self.batch.resource_group, 'batch-ai-test-rg')
         self.assertEqual(self.batch.workspace_name, 'batch-ai-workspace')
         self.assertEqual(self.batch.cluster_name, 'batch-ai-cluster')
         self.assertEqual(self.batch.location, 'eastus')
-    
+
     @mock.patch('airflow.contrib.operators.azure_batchai_operator.AzureBatchAIHook')
-    
     def test_execute_with_failures(self, abai_mock):
         abai_mock.return_value.get_state_exitcode.return_value = "Terminated", 1
-        print abai_mock.return_value.get_state_exitcode.return_value
         self.batch = AzureBatchAIOperator('azure_default',
-                                    'batch-ai-test-rg',
-                                    'batch-ai-workspace',
-                                    'batch-ai-cluster',
-                                    'eastus',
-                                    environment_variables={},
-                                    volumes=[],
-                                    task_id='test_operator')
+                                          'batch-ai-test-rg',
+                                          'batch-ai-workspace',
+                                          'batch-ai-cluster',
+                                          'eastus',
+                                          'auto',
+                                          environment_variables={},
+                                          volumes=[],
+                                          task_id='test_operator')
 
         with self.assertRaises(AirflowException):
             self.batch.execute()
+
 
 if __name__ == '__main__':
     unittest.main()

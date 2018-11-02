@@ -39,13 +39,12 @@ batch_ai_node = AzureBatchAIOperator(
     'azure_batchai_default',
     'batch-ai-test-rg',
     'batch-ai-workspace-name',
-    'batch-ai-cluster-name,
+    'batch-ai-cluster-name',
     'WestUS2',
     environment_variables={},
     volumes=[],
     task_id='run_this_first',
-    dag=dag
-    )
+    dag=dag)
 
 branching = BranchPythonOperator(
     task_id='branching',

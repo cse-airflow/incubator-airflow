@@ -27,32 +27,20 @@ from airflow.contrib.hooks.azure_batchai_hook import (AzureBatchAIHook)
 from airflow.exceptions import AirflowException, AirflowTaskTimeout
 from airflow.models import BaseOperator
 
-from azure.common.credentials import ServicePrincipalCredentials
 from azure.mgmt.resource import ResourceManagementClient
 
 from azure.common.client_factory import get_client_from_auth_file
 
 from azure.mgmt.batchai.models import (ClusterCreateParameters,
-                                        ManualScaleSettings,
-                                        AutoScaleSettings,
-                                        ScaleSettings,
-                                        VirtualMachineConfiguration,
-                                        ImageReference,
-                                        MountVolumes,
-                                        KeyVaultSecretReference,
-                                        AppInsightsReference,
-                                        PerformanceCountersSettings,
-                                        NodeSetup,
-                                        UserAccountSettings,
-                                        ResourceId)
+                                       ManualScaleSettings,
+                                       AutoScaleSettings,
+                                       ScaleSettings,
+                                       VirtualMachineConfiguration,
+                                       ImageReference,
+                                       UserAccountSettings)
 
-from azure.mgmt.containerinstance.models import (EnvironmentVariable,
-                                                 VolumeMount,
-                                                 ResourceRequests,
-                                                 ResourceRequirements,
-                                                 Container,
-                                                 ContainerGroup)
 from msrestazure.azure_exceptions import CloudError
+
 
 class AzureBatchAIOperator(BaseOperator):
     """
@@ -70,6 +58,8 @@ class AzureBatchAIOperator(BaseOperator):
     :type cluster_name: str
     :param location: the location wherein this cluster should be started
     :type location: str
+    :param scale_type: either "manual" or "auto" based on desired scale settings
+    :type scale_type: str
     :param: environment_variables: key,value pairs containing environment variables
         which will be passed to the running container, including selected username and password
     :type: environment_variables: dict
@@ -99,14 +89,16 @@ class AzureBatchAIOperator(BaseOperator):
 
     template_fields = ('name', 'environment_variables')
     template_ext = tuple()
-    def __init__(self, bai_conn_id, resource_group, workspace_name, cluster_name, location,
-                environment_variables={}, volumes=[], publisher='Canonical', offer='UbuntuServer',
-                sku='16.04-LTS', version='latest', *args, **kwargs):
+
+    def __init__(self, bai_conn_id, resource_group, workspace_name, cluster_name, location, scale_type,
+                 environment_variables={}, volumes=[], publisher='Canonical', offer='UbuntuServer',
+                 sku='16.04-LTS', version='latest', *args, **kwargs):
         self.bai_conn_id = bai_conn_id
         self.resource_group = resource_group
         self.workspace_name = workspace_name
         self.cluster_name = cluster_name
         self.location = location
+        self.scale_type = scale_type
         self.environment_variables = environment_variables
         self.volumes = volumes
         self.publisher = publisher
@@ -119,32 +111,34 @@ class AzureBatchAIOperator(BaseOperator):
         batch_ai_hook = AzureBatchAIHook(self.bai_conn_id)
 
         resource_client = get_client_from_auth_file(ResourceManagementClient)
-        resource_group_params = {'location': self.location }
-        resource_client.resource_groups.create_or_update(self.resource_group, resource_group_params) 
+        resource_group_params = {'location': self.location}
+        resource_client.resource_groups.create_or_update(self.resource_group, resource_group_params)
 
         try:
             self.log.info("Starting Batch AI cluster with offer %d and sku %d mem",
                           self.offer, self.sku)
-            
-            auto_scale_settings = AutoScaleSettings(
-                minimum_node_count=0,
-                maximum_node_count=10,
-                initial_node_count=0)
 
-            scale_settings = ScaleSettings(
-                auto_scale=auto_scale_settings)
+            auto_scale_settings = AutoScaleSettings(minimum_node_count=0,
+                                                    maximum_node_count=10,
+                                                    initial_node_count=0)
 
-            image_reference = ImageReference(
-                publisher=self.publisher,
-                offer=self.offer,
-                sku=self.sku,
-                version=self.version)
+            manual_scale_settings = ManualScaleSettings(target_node_count=0,
+                                                        node_deallocation_option='requeue')
 
-            vm_configuration = VirtualMachineConfiguration(
-                image_reference=image_reference)
+            if self.scale_type == 'manual':
+                scale_settings = ScaleSettings(manual=manual_scale_settings)
+            else:
+                scale_settings = ScaleSettings(auto_scale=auto_scale_settings)
 
-            username=os.environ['USERNAME']
-            password=os.environ['PASSWORD']
+            image_reference = ImageReference(publisher=self.publisher,
+                                             offer=self.offer,
+                                             sku=self.sku,
+                                             version=self.version)
+
+            vm_configuration = VirtualMachineConfiguration(image_reference=image_reference)
+
+            username = os.environ['USERNAME']
+            password = os.environ['PASSWORD']
 
             user_account_settings = UserAccountSettings(
                 admin_user_name=username,
@@ -157,7 +151,11 @@ class AzureBatchAIOperator(BaseOperator):
                 virtual_machine_configuration=vm_configuration,
                 user_account_settings=user_account_settings)
 
-            batch_ai_hook.create(self.resource_group, self.workspace_name, self.cluster_name, self.location, parameters)
+            batch_ai_hook.create(self.resource_group,
+                                 self.workspace_name,
+                                 self.cluster_name,
+                                 self.location, parameters)
+
             self.log.info("Cluster started")
 
             exit_code = self._monitor_logging(batch_ai_hook, self.resource_group, self.workspace_name)
@@ -167,50 +165,56 @@ class AzureBatchAIOperator(BaseOperator):
                 raise AirflowException("Container had a non-zero exit code, %s"
                                        % exit_code)
         except CloudError as e:
-            print e
-            self.log.exception("Could not start batch ai cluster")
+            self.log.exception("Could not start batch ai cluster, %s", str(e))
             raise AirflowException("Could not start batch ai cluster")
-        
+
         finally:
             self.log.info("Deleting batch ai cluster")
             try:
                 batch_ai_hook.delete(self.resource_group, self.workspace_name, self.cluster_name)
             except Exception:
                 self.log.exception("Could not delete batch ai cluster")
-    
+
     def _monitor_logging(self, batch_ai_hook, resource_group, name):
         last_state = None
         last_message_logged = None
         last_line_logged = None
         for _ in range(43200):
             try:
-                state, exit_code = batch_ai_hook.get_state_exitcode(self.resource_group, self.workspace_name, self.cluster_name)
-                
+                state, exit_code = batch_ai_hook.get_state_exitcode(self.resource_group,
+                                                                    self.workspace_name,
+                                                                    self.cluster_name)
+
                 if state != last_state:
                     self.log.info("Cluster state changed to %s", state)
                     last_state = state
-                
+
                 if state == "Terminated":
                     return exit_code
-                messages = batch_ai_hook.get_messages(self.resource_group, self.workspace_name, self.cluster_name)
+                messages = batch_ai_hook.get_messages(self.resource_group,
+                                                      self.workspace_name,
+                                                      self.cluster_name)
                 last_message_logged = self._log_last(messages, last_message_logged)
-                
+
                 if state == "Running":
                     try:
-                        logs = batch_ai_hook.get_messages(self.resource_group, self.workspace_name, self.cluster_name)
+                        logs = batch_ai_hook.get_messages(self.resource_group,
+                                                          self.workspace_name,
+                                                          self.cluster_name)
                         last_line_logged = self._log_last(logs, last_line_logged)
                     except CloudError as err:
-                        self.log.exception("Exception while getting logs from cluster, retrying...")
-           
+                        self.log.exception("Exception (%s) while getting logs from cluster, "
+                                           "retrying...", str(err))
+
             except CloudError as err:
                 if 'ResourceNotFound' in str(err):
                     self.log.warning("ResourceNotFound, cluster is probably removed by another process "
-                                     "(make sure that the name is unique).")
+                                     "(make sure that the name is unique). Error: %s", str(err))
                     return 1
                 else:
                     self.log.exception("Exception while getting cluster")
-            
+
             except Exception as e:
-                self.log.exception("Exception while getting cluster")
+                self.log.exception("Exception while getting cluster: %s", str(e))
             sleep(1)
         raise AirflowTaskTimeout("Did not complete on time")

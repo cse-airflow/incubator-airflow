@@ -23,6 +23,7 @@ from azure.common.credentials import ServicePrincipalCredentials
 
 from azure.mgmt.batchai import BatchAIManagementClient
 
+
 class AzureBatchAIHook(BaseHook):
 
     def __init__(self, azure_batchai_conn_id='azure_batchai_default'):
@@ -48,7 +49,7 @@ class AzureBatchAIHook(BaseHook):
                                                  key_path)
             else:
                 raise AirflowException('Unrecognised extension for key file.')
-        
+
         credentials = ServicePrincipalCredentials(
             client_id=conn.login,
             secret=conn.password,
@@ -59,37 +60,37 @@ class AzureBatchAIHook(BaseHook):
         return BatchAIManagementClient(credentials, str(subscription_id))
 
     def create(self, resource_group, workspace_name, cluster_name, location, parameters):
-        print "creating workspace....."
+        self.log.info("creating workspace.....")
         self.connection.workspaces._create_initial(resource_group,
-                                                    workspace_name,
-                                                    location)
-        
-        print "creating cluster....."                                            
+                                                   workspace_name,
+                                                   location)
+
+        self.log.info("creating cluster.....")
         self.connection.clusters._create_initial(resource_group,
-                                          workspace_name,
-                                          cluster_name,
-                                          parameters)
-                                                        
+                                                 workspace_name,
+                                                 cluster_name,
+                                                 parameters)
+
     def update(self, resource_group, workspace_name, cluster_name):
-        print "updating cluster....."
+        self.log.info("updating cluster.....")
         self.connection.clusters.update(resource_group,
-                                          workspace_name,
-                                          cluster_name)
+                                        workspace_name,
+                                        cluster_name)
 
     def get_state_exitcode(self, resource_group, workspace_name, cluster_name):
         response = self.connection.clusters.get(resource_group,
-                                                        workspace_name,
-                                                        cluster_name,
-                                                        raw=True).response.json()
+                                                workspace_name,
+                                                cluster_name,
+                                                raw=True).response.json()
         current_state = response['properties']['provisioningState']
         return current_state
 
     def get_messages(self, resource_group, workspace_name, cluster_name):
         response = self.connection.clusters.get(resource_group,
-                                                    workspace_name,
-                                                    cluster_name,
-                                                    raw=True).response.json()
-        cluster = response['properties']['cluster'] 
+                                                workspace_name,
+                                                cluster_name,
+                                                raw=True).response.json()
+        cluster = response['properties']['cluster']
         instance_view = cluster[0]['properties'].get('instanceView', {})
         return [event['message'] for event in instance_view.get('events', [])]
 

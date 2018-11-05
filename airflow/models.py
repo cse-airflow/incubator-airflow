@@ -666,6 +666,7 @@ class Connection(Base, LoggingMixin):
         ('azure_data_lake', 'Azure Data Lake'),
         ('azure_batch_ai', 'Azure Batch AI'),
         ('cassandra', 'Cassandra',),
+        ('qubole', 'Qubole'),
     ]
 
     def __init__(

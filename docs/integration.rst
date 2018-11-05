@@ -1022,3 +1022,13 @@ QuboleFileSensor
 ''''''''''''''''
 
 .. autoclass:: airflow.contrib.sensors.qubole_sensor.QuboleFileSensor
+
+QuboleCheckOperator
+'''''''''''''''''''
+
+.. autoclass:: airflow.contrib.operators.qubole_check_operator.QuboleCheckOperator
+
+QuboleValueCheckOperator
+''''''''''''''''''''''''
+
+.. autoclass:: airflow.contrib.operators.qubole_check_operator.QuboleValueCheckOperator

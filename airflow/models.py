@@ -666,6 +666,7 @@ class Connection(Base, LoggingMixin):
         ('azure_data_lake', 'Azure Data Lake'),
         ('azure_cosmos', 'Azure CosmosDB'),
         ('cassandra', 'Cassandra',),
+        ('qubole', 'Qubole'),
     ]
 
     def __init__(

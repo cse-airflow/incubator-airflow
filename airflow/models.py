@@ -811,7 +811,7 @@ class Connection(Base, LoggingMixin):
                 return AzureDataLakeHook(azure_data_lake_conn_id=self.conn_id)
             elif self.conn_type == 'azure_cosmos':
                 from airflow.contrib.hooks.azure_cosmos_hook import AzureCosmosDBHook
-                return AzureCosmosDBHook(azure_data_lake_conn_id=self.conn_id)
+                return AzureCosmosDBHook(azure_cosmos_conn_id=self.conn_id)
             elif self.conn_type == 'cassandra':
                 from airflow.contrib.hooks.cassandra_hook import CassandraHook
                 return CassandraHook(cassandra_conn_id=self.conn_id)

@@ -668,6 +668,7 @@ class Connection(Base, LoggingMixin):
         ('azure_batch_ai', 'Azure Batch AI'),
         ('cassandra', 'Cassandra',),
         ('qubole', 'Qubole'),
+        ('mongo', 'MongoDB'),
         ('gcpcloudsql', 'Google Cloud SQL'),
     ]
 
@@ -812,6 +813,9 @@ class Connection(Base, LoggingMixin):
             elif self.conn_type == 'cassandra':
                 from airflow.contrib.hooks.cassandra_hook import CassandraHook
                 return CassandraHook(cassandra_conn_id=self.conn_id)
+            elif self.conn_type == 'mongo':
+                from airflow.contrib.hooks.mongo_hook import MongoHook
+                return MongoHook(conn_id=self.conn_id)
             elif self.conn_type == 'gcpcloudsql':
                 from airflow.contrib.hooks.gcp_sql_hook import CloudSqlDatabaseHook
                 return CloudSqlDatabaseHook(gcp_cloudsql_conn_id=self.conn_id)

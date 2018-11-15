@@ -140,7 +140,7 @@ class AzureCosmosDBHook(BaseHook):
         if document is None:
             raise AirflowBadRequest("You cannot insert a None document")
 
-        # Add 
+        # Add document id if isn't found
         if 'id' in document:
             if document['id'] is None:
                 document['id'] = document_id

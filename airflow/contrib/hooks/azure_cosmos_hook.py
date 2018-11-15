@@ -135,12 +135,16 @@ class AzureCosmosDBHook(BaseHook):
         """
         # Assign unique ID if one isn't provided
         if document_id is None:
-            document_id = uuid.uuid4()
+            document_id = str(uuid.uuid4())
 
         if document is None:
             raise AirflowBadRequest("You cannot insert a None document")
 
-        if document['id'] is None:
+        # Add 
+        if 'id' in document:
+            if document['id'] is None:
+                document['id'] = document_id
+        else:
             document['id'] = document_id
 
         created_document = self.get_conn().CreateItem(

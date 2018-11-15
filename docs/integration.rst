@@ -186,6 +186,35 @@ AzureDataLakeStorageListOperator
 
 .. autoclass:: airflow.contrib.operators.adls_list_operator.AzureDataLakeStorageListOperator
 
+Azure CosmosDB
+''''''''''''''''''
+
+AzureCosmosDBHook communicates via the Azure Cosmos library. Make sure that a
+Airflow connection of type `azure_cosmos` exists. Authorization can be done by supplying a
+login (=Endpoint uri), password (=secret key) and extra fields database_name and collection_name to specify the 
+default database and collection to use (see connection `azure_cosmos_default` for an example).
+
+- :ref:`AzureCosmosDBHook`: Interface with Azure CosmosDB.
+- :ref:`AzureCosmosInsertDocumentOperator`: Simple operator to insert document into CosmosDB.
+- :ref:`AzureCosmosDocumentSensor`: Simple sensor to detect document existence in CosmosDB.
+
+.. AzureCosmosDBHook:
+
+AzureCosmosDBHook
+"""""""""
+
+.. autoclass:: airflow.contrib.hooks.azure_cosmos_hook.AzureCosmosDBHook
+
+AzureCosmosInsertDocumentOperator
+"""""""""
+
+.. autoclass:: airflow.contrib.operators.azure_cosmos_insertdocument_operator.AzureCosmosInsertDocumentOperator
+
+AzureCosmosDocumentSensor
+"""""""""
+
+.. autoclass:: airflow.contrib.sensors.azure_cosmos_sensor.AzureCosmosDocumentSensor
+
 .. _AWS:
 
 AWS: Amazon Web Services

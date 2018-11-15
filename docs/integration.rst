@@ -180,13 +180,6 @@ AzureDataLakeHook
 
 .. autoclass:: airflow.contrib.hooks.azure_data_lake_hook.AzureDataLakeHook
 
-.. _AzureDataLakeStorageListOperator:
-
-AzureDataLakeStorageListOperator
-""""""""""""""""""""""""""""""""
-
-.. autoclass:: airflow.contrib.operators.adls_list_operator.AzureDataLakeStorageListOperator
-
 Azure CosmosDB
 ''''''''''''''''''
 
@@ -215,13 +208,6 @@ AzureCosmosDocumentSensor
 """""""""
 
 .. autoclass:: airflow.contrib.sensors.azure_cosmos_sensor.AzureCosmosDocumentSensor
-
-.. _AdlsToGoogleCloudStorageOperator:
-
-AdlsToGoogleCloudStorageOperator
-""""""""""""""""""""""""""""""""
-
-.. autoclass:: airflow.contrib.operators.adls_to_gcs.AdlsToGoogleCloudStorageOperator
 
 .. _AWS:
 

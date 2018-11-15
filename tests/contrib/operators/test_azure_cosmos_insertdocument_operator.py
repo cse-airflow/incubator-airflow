@@ -63,7 +63,7 @@ class TestAzureCosmosDbHook(unittest.TestCase):
     @mock.patch('azure.cosmos.cosmos_client.CosmosClient')
     def test_insert_document(self, cosmos_mock):
         test_id = str(uuid.uuid4())
-        cosmos_mock.return_value.CreateItem.return_value =  {'id': test_id}
+        cosmos_mock.return_value.CreateItem.return_value = {'id': test_id}
         self.cosmos = AzureCosmosInsertDocumentOperator(
             database_name=self.test_database_name,
             collection_name=self.test_collection_name,
@@ -78,6 +78,7 @@ class TestAzureCosmosDbHook(unittest.TestCase):
         self.cosmos.execute(None)
         cosmos_mock.assert_any_call(self.test_end_point, {'masterKey': self.test_master_key})
         cosmos_mock.assert_has_calls(expected_calls)
+
 
 if __name__ == '__main__':
     unittest.main()

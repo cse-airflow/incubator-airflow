@@ -65,7 +65,6 @@ class TestAzureCosmosDbHook(unittest.TestCase):
             )
         )
 
-
     @mock.patch('azure.cosmos.cosmos_client.CosmosClient')
     def test_create_database(self, cosmos_mock):
         self.cosmos = AzureCosmosDBHook(azure_cosmos_conn_id='azure_cosmos_test_key_id')
@@ -107,9 +106,9 @@ class TestAzureCosmosDbHook(unittest.TestCase):
     @mock.patch('azure.cosmos.cosmos_client.CosmosClient')
     def test_upsert_document_default(self, cosmos_mock):
         test_id = str(uuid.uuid4())
-        cosmos_mock.return_value.CreateItem.return_value =  {'id': test_id}
+        cosmos_mock.return_value.CreateItem.return_value = {'id': test_id}
         self.cosmos = AzureCosmosDBHook(azure_cosmos_conn_id='azure_cosmos_test_key_id')
-        returned_item = self.cosmos.upsert_document( {'id': test_id})
+        returned_item = self.cosmos.upsert_document({'id': test_id})
         expected_calls = [mock.call().CreateItem(
             'dbs/' + self.test_database_default + '/colls/' + self.test_collection_default,
             {'id': test_id})]
@@ -121,12 +120,18 @@ class TestAzureCosmosDbHook(unittest.TestCase):
     @mock.patch('azure.cosmos.cosmos_client.CosmosClient')
     def test_upsert_document(self, cosmos_mock):
         test_id = str(uuid.uuid4())
-        cosmos_mock.return_value.CreateItem.return_value =  {'id': test_id}
+        cosmos_mock.return_value.CreateItem.return_value = {'id': test_id}
         self.cosmos = AzureCosmosDBHook(azure_cosmos_conn_id='azure_cosmos_test_key_id')
-        returned_item = self.cosmos.upsert_document( {'data1': 'somedata'}, database_name=self.test_database_name, collection_name=self.test_collection_name, document_id=test_id)
+        returned_item = self.cosmos.upsert_document(
+            {'data1': 'somedata'},
+            database_name=self.test_database_name,
+            collection_name=self.test_collection_name,
+            document_id=test_id)
+
         expected_calls = [mock.call().CreateItem(
             'dbs/' + self.test_database_name + '/colls/' + self.test_collection_name,
             {'data1': 'somedata', 'id': test_id})]
+
         cosmos_mock.assert_any_call(self.test_end_point, {'masterKey': self.test_master_key})
         cosmos_mock.assert_has_calls(expected_calls)
         logging.getLogger().info(returned_item)
@@ -137,7 +142,8 @@ class TestAzureCosmosDbHook(unittest.TestCase):
         test_id1 = str(uuid.uuid4())
         test_id2 = str(uuid.uuid4())
         test_id3 = str(uuid.uuid4())
-        documents = [{'id': test_id1, 'data': 'data1'},
+        documents = [
+            {'id': test_id1, 'data': 'data1'},
             {'id': test_id2, 'data': 'data2'},
             {'id': test_id3, 'data': 'data3'}]
 
@@ -145,14 +151,14 @@ class TestAzureCosmosDbHook(unittest.TestCase):
         returned_item = self.cosmos.insert_documents(documents)
         expected_calls = [
             mock.call().CreateItem(
-            'dbs/' + self.test_database_default + '/colls/' + self.test_collection_default,
-            {'data': 'data1', 'id': test_id1}),
+                'dbs/' + self.test_database_default + '/colls/' + self.test_collection_default,
+                {'data': 'data1', 'id': test_id1}),
             mock.call().CreateItem(
-            'dbs/' + self.test_database_default + '/colls/' + self.test_collection_default,
-            {'data': 'data2', 'id': test_id2}),
+                'dbs/' + self.test_database_default + '/colls/' + self.test_collection_default,
+                {'data': 'data2', 'id': test_id2}),
             mock.call().CreateItem(
-            'dbs/' + self.test_database_default + '/colls/' + self.test_collection_default,
-            {'data': 'data3', 'id': test_id3})]
+                'dbs/' + self.test_database_default + '/colls/' + self.test_collection_default,
+                {'data': 'data3', 'id': test_id3})]
         logging.getLogger().info(returned_item)
         cosmos_mock.assert_any_call(self.test_end_point, {'masterKey': self.test_master_key})
         cosmos_mock.assert_has_calls(expected_calls)
@@ -190,6 +196,7 @@ class TestAzureCosmosDbHook(unittest.TestCase):
         expected_calls = [mock.call().DeleteContainer('dbs/test_database_default/colls/test_collection_name')]
         cosmos_mock.assert_any_call(self.test_end_point, {'masterKey': self.test_master_key})
         cosmos_mock.assert_has_calls(expected_calls)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -171,6 +171,7 @@ login (=Client ID), password (=Client Secret) and extra fields tenant (Tenant) a
 
 - :ref:`AzureDataLakeHook`: Interface with Azure Data Lake.
 - :ref:`AzureDataLakeStorageListOperator`: Lists the files located in a specified Azure Data Lake path.
+- :ref:`AdlsToGoogleCloudStorageOperator`: Copies files from an Azure Data Lake path to a Google Cloud Storage bucket.
 
 .. _AzureDataLakeHook:
 
@@ -214,6 +215,13 @@ AzureCosmosDocumentSensor
 """""""""
 
 .. autoclass:: airflow.contrib.sensors.azure_cosmos_sensor.AzureCosmosDocumentSensor
+
+.. _AdlsToGoogleCloudStorageOperator:
+
+AdlsToGoogleCloudStorageOperator
+""""""""""""""""""""""""""""""""
+
+.. autoclass:: airflow.contrib.operators.adls_to_gcs.AdlsToGoogleCloudStorageOperator
 
 .. _AWS:
 

@@ -48,6 +48,7 @@ import json
 import logging
 import numbers
 import os
+import pendulum
 import pickle
 import re
 import signal
@@ -63,7 +64,7 @@ from urllib.parse import urlparse, quote, parse_qsl, unquote
 
 from sqlalchemy import (
     Boolean, Column, DateTime, Float, ForeignKey, ForeignKeyConstraint, Index,
-    Integer, LargeBinary, PickleType, String, Text, UniqueConstraint,
+    Integer, LargeBinary, PickleType, String, Text, UniqueConstraint, MetaData,
     and_, asc, func, or_, true as sqltrue
 )
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
@@ -107,7 +108,13 @@ from airflow.utils.log.logging_mixin import LoggingMixin
 
 install_aliases()
 
-Base = declarative_base()
+SQL_ALCHEMY_SCHEMA = configuration.get('core', 'SQL_ALCHEMY_SCHEMA')
+
+if not SQL_ALCHEMY_SCHEMA or SQL_ALCHEMY_SCHEMA.isspace():
+    Base = declarative_base()
+else:
+    Base = declarative_base(metadata=MetaData(schema=SQL_ALCHEMY_SCHEMA))
+
 ID_LEN = 250
 XCOM_RETURN_KEY = 'return_value'
 
@@ -285,12 +292,7 @@ class DagBag(BaseDagBag, LoggingMixin):
         self.import_errors = {}
         self.has_logged = False
 
-        if include_examples:
-            example_dag_folder = os.path.join(
-                os.path.dirname(__file__),
-                'example_dags')
-            self.collect_dags(example_dag_folder)
-        self.collect_dags(dag_folder)
+        self.collect_dags(dag_folder, include_examples)
 
     def size(self):
         """
@@ -524,7 +526,8 @@ class DagBag(BaseDagBag, LoggingMixin):
     def collect_dags(
             self,
             dag_folder=None,
-            only_if_updated=True):
+            only_if_updated=True,
+            include_examples=configuration.conf.getboolean('core', 'LOAD_EXAMPLES')):
         """
         Given a file path or a folder, this method looks for python modules,
         imports them and adds them to the dagbag collection.
@@ -544,7 +547,7 @@ class DagBag(BaseDagBag, LoggingMixin):
         stats = []
         FileLoadStat = namedtuple(
             'FileLoadStat', "file duration dag_num task_num dags")
-        for filepath in list_py_file_paths(dag_folder):
+        for filepath in list_py_file_paths(dag_folder, include_examples):
             try:
                 ts = timezone.utcnow()
                 found_dags = self.process_file(
@@ -664,7 +667,11 @@ class Connection(Base, LoggingMixin):
         ('snowflake', 'Snowflake',),
         ('segment', 'Segment',),
         ('azure_data_lake', 'Azure Data Lake'),
+        ('azure_cosmos', 'Azure CosmosDB'),
         ('cassandra', 'Cassandra',),
+        ('qubole', 'Qubole'),
+        ('mongo', 'MongoDB'),
+        ('gcpcloudsql', 'Google Cloud SQL'),
     ]
 
     def __init__(
@@ -802,9 +809,18 @@ class Connection(Base, LoggingMixin):
             elif self.conn_type == 'azure_data_lake':
                 from airflow.contrib.hooks.azure_data_lake_hook import AzureDataLakeHook
                 return AzureDataLakeHook(azure_data_lake_conn_id=self.conn_id)
+            elif self.conn_type == 'azure_cosmos':
+                from airflow.contrib.hooks.azure_cosmos_hook import AzureCosmosDBHook
+                return AzureCosmosDBHook(azure_cosmos_conn_id=self.conn_id)
             elif self.conn_type == 'cassandra':
                 from airflow.contrib.hooks.cassandra_hook import CassandraHook
                 return CassandraHook(cassandra_conn_id=self.conn_id)
+            elif self.conn_type == 'mongo':
+                from airflow.contrib.hooks.mongo_hook import MongoHook
+                return MongoHook(conn_id=self.conn_id)
+            elif self.conn_type == 'gcpcloudsql':
+                from airflow.contrib.hooks.gcp_sql_hook import CloudSqlDatabaseHook
+                return CloudSqlDatabaseHook(gcp_cloudsql_conn_id=self.conn_id)
         except Exception:
             pass
 
@@ -1244,7 +1260,7 @@ class TaskInstance(Base, LoggingMixin):
         """
         Returns a tuple that identifies the task instance uniquely
         """
-        return self.dag_id, self.task_id, self.execution_date
+        return self.dag_id, self.task_id, self.execution_date, self.try_number
 
     @provide_session
     def set_state(self, state, session=None):
@@ -1684,14 +1700,6 @@ class TaskInstance(Base, LoggingMixin):
             self.handle_failure(e, test_mode, context)
             raise
 
-        # Recording SUCCESS
-        self.end_date = timezone.utcnow()
-        self.set_duration()
-        if not test_mode:
-            session.add(Log(self.state, self))
-            session.merge(self)
-        session.commit()
-
         # Success callback
         try:
             if task.on_success_callback:
@@ -1700,6 +1708,12 @@ class TaskInstance(Base, LoggingMixin):
             self.log.error("Failed when executing success callback")
             self.log.exception(e3)
 
+        # Recording SUCCESS
+        self.end_date = timezone.utcnow()
+        self.set_duration()
+        if not test_mode:
+            session.add(Log(self.state, self))
+            session.merge(self)
         session.commit()
 
     @provide_session
@@ -1974,21 +1988,40 @@ class TaskInstance(Base, LoggingMixin):
                 setattr(task, attr, rendered_content)
 
     def email_alert(self, exception):
-        task = self.task
-        title = "Airflow alert: {self}".format(**locals())
-        exception = str(exception).replace('\n', '<br>')
+        exception_html = str(exception).replace('\n', '<br>')
+        jinja_context = self.get_template_context()
+        jinja_context.update(dict(
+            exception=exception,
+            exception_html=exception_html,
+            try_number=self.try_number,
+            max_tries=self.max_tries))
+
+        jinja_env = self.task.get_template_env()
+
+        default_subject = 'Airflow alert: {{ti}}'
         # For reporting purposes, we report based on 1-indexed,
         # not 0-indexed lists (i.e. Try 1 instead of
         # Try 0 for the first attempt).
-        body = (
-            "Try {try_number} out of {max_tries}<br>"
-            "Exception:<br>{exception}<br>"
-            "Log: <a href='{self.log_url}'>Link</a><br>"
-            "Host: {self.hostname}<br>"
-            "Log file: {self.log_filepath}<br>"
-            "Mark success: <a href='{self.mark_success_url}'>Link</a><br>"
-        ).format(try_number=self.try_number, max_tries=self.max_tries + 1, **locals())
-        send_email(task.email, title, body)
+        default_html_content = (
+            'Try {{try_number}} out of {{max_tries + 1}}<br>'
+            'Exception:<br>{{exception_html}}<br>'
+            'Log: <a href="{{ti.log_url}}">Link</a><br>'
+            'Host: {{ti.hostname}}<br>'
+            'Log file: {{ti.log_filepath}}<br>'
+            'Mark success: <a href="{{ti.mark_success_url}}">Link</a><br>'
+        )
+
+        def render(key, content):
+            if configuration.has_option('email', key):
+                path = configuration.get('email', key)
+                with open(path) as f:
+                    content = f.read()
+
+            return jinja_env.from_string(content).render(**jinja_context)
+
+        subject = render('subject_template', default_subject)
+        html_content = render('html_content_template', default_html_content)
+        send_email(self.task.email, subject, html_content)
 
     def set_duration(self):
         if self.end_date and self.start_date:
@@ -2407,7 +2440,7 @@ class BaseOperator(LoggingMixin):
     :param trigger_rule: defines the rule by which dependencies are applied
         for the task to get triggered. Options are:
         ``{ all_success | all_failed | all_done | one_success |
-        one_failed | dummy}``
+        one_failed | none_failed | dummy}``
         default is ``all_success``. Options can be set as string or
         using the constants defined in the static class
         ``airflow.utils.TriggerRule``
@@ -2497,14 +2530,14 @@ class BaseOperator(LoggingMixin):
         if args or kwargs:
             # TODO remove *args and **kwargs in Airflow 2.0
             warnings.warn(
-                'Invalid arguments were passed to {c}. Support for '
-                'passing such arguments will be dropped in Airflow 2.0. '
-                'Invalid arguments were:'
+                'Invalid arguments were passed to {c} (task_id: {t}). '
+                'Support for passing such arguments will be dropped in '
+                'Airflow 2.0. Invalid arguments were:'
                 '\n*args: {a}\n**kwargs: {k}'.format(
-                    c=self.__class__.__name__, a=args, k=kwargs),
-                category=PendingDeprecationWarning
+                    c=self.__class__.__name__, a=args, k=kwargs, t=task_id),
+                category=PendingDeprecationWarning,
+                stacklevel=3
             )
-
         validate_key(task_id)
         self.task_id = task_id
         self.owner = owner
@@ -2877,9 +2910,7 @@ class BaseOperator(LoggingMixin):
         Renders a template either from a file or directly in a field, and returns
         the rendered result.
         """
-        jinja_env = self.dag.get_template_env() \
-            if hasattr(self, 'dag') \
-            else jinja2.Environment(cache_size=0)
+        jinja_env = self.get_template_env()
 
         exts = self.__class__.template_ext
         if (
@@ -2888,6 +2919,11 @@ class BaseOperator(LoggingMixin):
             return jinja_env.get_template(content).render(**context)
         else:
             return self.render_template_from_field(attr, content, context, jinja_env)
+
+    def get_template_env(self):
+        return self.dag.get_template_env() \
+            if hasattr(self, 'dag') \
+            else jinja2.Environment(cache_size=0)
 
     def prepare_template(self):
         """
@@ -2902,14 +2938,24 @@ class BaseOperator(LoggingMixin):
         # Getting the content of files for template_field / template_ext
         for attr in self.template_fields:
             content = getattr(self, attr)
-            if content is not None and \
-                    isinstance(content, six.string_types) and \
+            if content is None:
+                continue
+            elif isinstance(content, six.string_types) and \
                     any([content.endswith(ext) for ext in self.template_ext]):
-                env = self.dag.get_template_env()
+                env = self.get_template_env()
                 try:
                     setattr(self, attr, env.loader.get_source(env, content)[0])
                 except Exception as e:
                     self.log.exception(e)
+            elif isinstance(content, list):
+                env = self.dag.get_template_env()
+                for i in range(len(content)):
+                    if isinstance(content[i], six.string_types) and \
+                            any([content[i].endswith(ext) for ext in self.template_ext]):
+                        try:
+                            content[i] = env.loader.get_source(env, content[i])[0]
+                        except Exception as e:
+                            self.log.exception(e)
         self.prepare_template()
 
     @property
@@ -3338,7 +3384,8 @@ class DAG(BaseDag, LoggingMixin):
                     timezone.parse(self.default_args['start_date'])
                 )
             self.timezone = self.default_args['start_date'].tzinfo
-        else:
+
+        if not hasattr(self, 'timezone') or not self.timezone:
             self.timezone = settings.TIMEZONE
 
         self.start_date = timezone.convert_to_utc(start_date)
@@ -3445,33 +3492,76 @@ class DAG(BaseDag, LoggingMixin):
             start_date=start_date, end_date=end_date,
             num=num, delta=self._schedule_interval)
 
+    def is_fixed_time_schedule(self):
+        """
+        Figures out if the DAG schedule has a fixed time (e.g. 3 AM).
+
+        :return: True if the schedule has a fixed time, False if not.
+        """
+        now = datetime.now()
+        cron = croniter(self._schedule_interval, now)
+
+        start = cron.get_next(datetime)
+        cron_next = cron.get_next(datetime)
+
+        if cron_next.minute == start.minute and cron_next.hour == start.hour:
+            return True
+
+        return False
+
     def following_schedule(self, dttm):
         """
-        Calculates the following schedule for this dag in local time
+        Calculates the following schedule for this dag in UTC.
 
         :param dttm: utc datetime
         :return: utc datetime
         """
         if isinstance(self._schedule_interval, six.string_types):
-            dttm = timezone.make_naive(dttm, self.timezone)
-            cron = croniter(self._schedule_interval, dttm)
-            following = timezone.make_aware(cron.get_next(datetime), self.timezone)
+            # we don't want to rely on the transitions created by
+            # croniter as they are not always correct
+            dttm = pendulum.instance(dttm)
+            naive = timezone.make_naive(dttm, self.timezone)
+            cron = croniter(self._schedule_interval, naive)
+
+            # We assume that DST transitions happen on the minute/hour
+            if not self.is_fixed_time_schedule():
+                # relative offset (eg. every 5 minutes)
+                delta = cron.get_next(datetime) - naive
+                following = dttm.in_timezone(self.timezone).add_timedelta(delta)
+            else:
+                # absolute (e.g. 3 AM)
+                naive = cron.get_next(datetime)
+                tz = pendulum.timezone(self.timezone.name)
+                following = timezone.make_aware(naive, tz)
             return timezone.convert_to_utc(following)
         elif self._schedule_interval is not None:
             return dttm + self._schedule_interval
 
     def previous_schedule(self, dttm):
         """
-        Calculates the previous schedule for this dag in local time
+        Calculates the previous schedule for this dag in UTC
 
         :param dttm: utc datetime
         :return: utc datetime
         """
         if isinstance(self._schedule_interval, six.string_types):
-            dttm = timezone.make_naive(dttm, self.timezone)
-            cron = croniter(self._schedule_interval, dttm)
-            prev = timezone.make_aware(cron.get_prev(datetime), self.timezone)
-            return timezone.convert_to_utc(prev)
+            # we don't want to rely on the transitions created by
+            # croniter as they are not always correct
+            dttm = pendulum.instance(dttm)
+            naive = timezone.make_naive(dttm, self.timezone)
+            cron = croniter(self._schedule_interval, naive)
+
+            # We assume that DST transitions happen on the minute/hour
+            if not self.is_fixed_time_schedule():
+                # relative offset (eg. every 5 minutes)
+                delta = naive - cron.get_prev(datetime)
+                previous = dttm.in_timezone(self.timezone).subtract_timedelta(delta)
+            else:
+                # absolute (e.g. 3 AM)
+                naive = cron.get_prev(datetime)
+                tz = pendulum.timezone(self.timezone.name)
+                previous = timezone.make_aware(naive, tz)
+            return timezone.convert_to_utc(previous)
         elif self._schedule_interval is not None:
             return dttm - self._schedule_interval
 

@@ -20,6 +20,7 @@
 
 import unittest
 
+from airflow import configuration
 from airflow.exceptions import AirflowException
 from airflow.contrib.operators.azure_batchai_operator import AzureBatchAIOperator
 
@@ -33,6 +34,21 @@ except ImportError:
 
 
 class TestAzureBatchAIOperator(unittest.TestCase):
+
+    @mock.patch('airflow.contrib.operators.azure_batchai_operator.AzureBatchAIHook')
+    def setUp(self, auzre_batchai_hook_mock):
+        configuration.load_test_config()
+
+        self.azure_batchai_hook_mock = azure_batchai_hook_mock
+        self.batch = AzureBatchAIOperator('azure_batchai_default',
+                                          'batch-ai-test-rg',
+                                          'batch-ai-workspace',
+                                          'batch-ai-cluster',
+                                          'eastus',
+                                          'auto',
+                                          environment_variables={},
+                                          volumes=[],
+                                          task_id='test_operator')
 
     @mock.patch('airflow.contrib.operators.azure_batchai_operator.AzureBatchAIHook')
     def test_execute(self, abai_mock):
@@ -52,6 +68,7 @@ class TestAzureBatchAIOperator(unittest.TestCase):
         self.assertEqual(self.batch.workspace_name, 'batch-ai-workspace')
         self.assertEqual(self.batch.cluster_name, 'batch-ai-cluster')
         self.assertEqual(self.batch.location, 'eastus')
+        self.assertEqual(self.batch.scale_type, 'auto')
 
     @mock.patch('airflow.contrib.operators.azure_batchai_operator.AzureBatchAIHook')
     def test_execute_with_failures(self, abai_mock):

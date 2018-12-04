@@ -23,6 +23,7 @@ from azure.common.credentials import ServicePrincipalCredentials
 
 from azure.mgmt.batchai import BatchAIManagementClient
 
+
 class AzureBatchAIHook(BaseHook):
 
     def __init__(self, azure_batchai_conn_id='azure_batchai_default'):

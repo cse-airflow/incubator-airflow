@@ -152,8 +152,8 @@ azure_data_lake = [
     'azure-datalake-store==0.0.19'
 ]
 azure_kubernetes_service = [
-    'azure.mgmt.containerservice',
-    'azure.mgmt.resource==1.16.0',
+    'azure.mgmt.containerservice==4.2.2',
+    'azure.mgmt.resource==2.0.0',
     'knack==0.4.4'
 ]
 cassandra = ['cassandra-driver>=3.13.0']
@@ -273,7 +273,7 @@ devel_all = (sendgrid + devel + all_dbs + doc + samba + s3 + slack + crypto + or
              docker + ssh + kubernetes + celery + azure_blob_storage + redis + gcp_api +
              datadog + zendesk + jdbc + ldap + kerberos + password + webhdfs + jenkins +
              druid + pinot + segment + snowflake + elasticsearch + azure_data_lake +
-             atlas)
+             azure_kubernetes_service + atlas)
 
 # Snakebite & Google Cloud Dataflow are not Python 3 compatible :'(
 if PY3:

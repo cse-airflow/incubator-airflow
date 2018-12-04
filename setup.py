@@ -145,7 +145,7 @@ async_packages = [
     'gevent>=0.13'
 ]
 atlas = ['atlasclient>=0.1.2']
-azure_batch_ai = ['azure-mgmt-batchai==0.4.3']
+azure_batch_ai = ['azure-mgmt-batchai==0.2.0']
 azure_blob_storage = ['azure-storage>=0.34.0']
 azure_data_lake = [
     'azure-mgmt-resource==1.2.2',

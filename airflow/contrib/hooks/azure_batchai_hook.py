@@ -23,7 +23,6 @@ from azure.common.credentials import ServicePrincipalCredentials
 
 from azure.mgmt.batchai import BatchAIManagementClient
 
-
 class AzureBatchAIHook(BaseHook):
 
     def __init__(self, azure_batchai_conn_id='azure_batchai_default'):
@@ -49,7 +48,6 @@ class AzureBatchAIHook(BaseHook):
                                                  key_path)
             else:
                 raise AirflowException('Unrecognised extension for key file.')
-
         credentials = ServicePrincipalCredentials(
             client_id=conn.login,
             secret=conn.password,

@@ -488,7 +488,7 @@ class Airflow(BaseView):
                 else:
                     # User provides columns (x, y, metric1, metric2, ...)
                     df.index = df[df.columns[0]]
-                    df = df.sort(df.columns[0])
+                    df = df.sort_values(by=df.columns[0])
                     del df[df.columns[0]]
                     for col in df.columns:
                         df[col] = df[col].astype(np.float)
@@ -1876,6 +1876,8 @@ class Airflow(BaseView):
             orm_dag.last_expired = timezone.utcnow()
             session.merge(orm_dag)
         session.commit()
+
+        models.DagStat.update([dag_id], session=session, dirty_only=False)
 
         dagbag.get_dag(dag_id)
         flash("DAG [{}] is now fresh as a daisy".format(dag_id))

@@ -174,7 +174,6 @@ class AzureBatchAIOperator(BaseOperator):
                 batch_ai_hook.delete(self.resource_group, self.workspace_name, self.cluster_name)
             except Exception:
                 self.log.exception("Could not delete batch ai cluster")
-
     def _monitor_logging(self, batch_ai_hook, resource_group, name):
         last_state = None
         last_message_logged = None

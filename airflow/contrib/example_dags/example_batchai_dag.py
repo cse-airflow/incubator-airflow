@@ -29,7 +29,7 @@ args = {
 }
 
 dag = DAG(
-    dag_id='example_batchai_dag',
+    dag_id='example_batchai_operator',
     default_args=args,
     schedule_interval="@daily")
 

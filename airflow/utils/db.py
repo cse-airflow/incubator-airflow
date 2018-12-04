@@ -280,7 +280,7 @@ def initdb(rbac=False):
     merge_conn(
         models.Connection(
             conn_id='azure_batchai_default', conn_type='azure_batch_ai',
-            extra='{"tenantId": "<TENANT>", "subscriptionId": "<SUBSCRIPTION ID>" }'))
+            extra='{"key_path": "<AZURE_AUTH_LOCATION>" }'))
     merge_conn(
         models.Connection(
             conn_id='cassandra_default', conn_type='cassandra',

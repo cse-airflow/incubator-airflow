@@ -24,6 +24,7 @@ import unittest
 from airflow import configuration
 from airflow.exceptions import AirflowException
 from airflow.contrib.operators.azure_batchai_operator import AzureBatchAIOperator
+from airflow.contrib.hooks.azure_batchai_hook import AzureBatchAIHook
 
 try:
     from unittest import mock
@@ -33,8 +34,24 @@ except ImportError:
     except ImportError:
         mock = None
 
+CONFIG_DATA = {
+    "clientId": "Id",
+    "clientSecret": "secret",
+    "subscriptionId": "subscription",
+    "tenantId": "tenant"
+}
+
 
 class TestAzureBatchAIOperator(unittest.TestCase):
+
+    # @mock.patch('airflow.contrib.hooks.azure_batchai_hook.load_json')
+    # @mock.patch('airflow.contrib.hooks.azure_batchai_hook.ServicePrincipalCredentials')
+    # def test_conn(self, mock_json, mock_service):
+    #     from azure.mgmt.batchai import BatchAIManagementClient
+    #     mock_json.return_value = CONFIG_DATA
+    #     hook = AzureBatchAIHook(conn_id='azure_batchai_default')
+    #     self.assertEqual(hook.conn_id, 'azure_batchai_default')
+    #     self.assertIsInstance(hook.connection, BatchAIManagementClient)
 
     @mock.patch('airflow.contrib.operators.azure_batchai_operator.AzureBatchAIHook')
     def setUp(self, azure_batchai_hook_mock):

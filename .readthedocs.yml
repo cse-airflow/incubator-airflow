@@ -30,4 +30,3 @@ python:
         - sendgrid
         - ssh
         - slack
-        - azure.mgmt.batchai

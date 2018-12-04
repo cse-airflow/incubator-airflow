@@ -36,7 +36,7 @@ except ImportError:
 class TestAzureBatchAIOperator(unittest.TestCase):
 
     @mock.patch('airflow.contrib.operators.azure_batchai_operator.AzureBatchAIHook')
-    def setUp(self, auzre_batchai_hook_mock):
+    def setUp(self, azure_batchai_hook_mock):
         configuration.load_test_config()
 
         self.azure_batchai_hook_mock = azure_batchai_hook_mock

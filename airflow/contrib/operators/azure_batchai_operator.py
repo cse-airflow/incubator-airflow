@@ -137,10 +137,12 @@ class AzureBatchAIOperator(BaseOperator):
 
             parameters = ClusterCreateParameters(
                 vm_size='STANDARD_NC6',
+                user_account_settings=user_account_settings,
                 vm_priority='dedicated',
                 scale_settings=scale_settings,
                 virtual_machine_configuration=vm_configuration,
-                user_account_settings=user_account_settings)
+                node_setup=None,
+                subnet=None)
 
             batch_ai_hook.create(self.resource_group,
                                  self.workspace_name,

@@ -108,7 +108,7 @@ class AzureBatchAIOperator(BaseOperator):
         batch_ai_hook = AzureBatchAIHook(self.bai_conn_id)
 
         try:
-            self.log.info("Starting Batch AI cluster with offer %d and sku %d mem",
+            self.log.info("Starting Batch AI cluster with offer %s and sku %s mem",
                           self.offer, self.sku)
 
             auto_scale_settings = AutoScaleSettings(minimum_node_count=0,

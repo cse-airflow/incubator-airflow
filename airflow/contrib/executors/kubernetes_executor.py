@@ -40,7 +40,7 @@ class KubernetesExecutorConfig:
     def __init__(self, image=None, image_pull_policy=None, request_memory=None,
                  request_cpu=None, limit_memory=None, limit_cpu=None,
                  gcp_service_account_key=None, node_selectors=None, affinity=None,
-                 annotations=None):
+                 annotations=None, volumes=None, volume_mounts=None):
         self.image = image
         self.image_pull_policy = image_pull_policy
         self.request_memory = request_memory
@@ -51,15 +51,18 @@ class KubernetesExecutorConfig:
         self.node_selectors = node_selectors
         self.affinity = affinity
         self.annotations = annotations
+        self.volumes = volumes
+        self.volume_mounts = volume_mounts
 
     def __repr__(self):
         return "{}(image={}, image_pull_policy={}, request_memory={}, request_cpu={}, " \
                "limit_memory={}, limit_cpu={}, gcp_service_account_key={}, " \
-               "node_selectors={}, affinity={}, annotations={})" \
+               "node_selectors={}, affinity={}, annotations={}, volumes={}, " \
+               "volume_mounts={})" \
             .format(KubernetesExecutorConfig.__name__, self.image, self.image_pull_policy,
                     self.request_memory, self.request_cpu, self.limit_memory,
                     self.limit_cpu, self.gcp_service_account_key, self.node_selectors,
-                    self.affinity, self.annotations)
+                    self.affinity, self.annotations, self.volumes, self.volume_mounts)
 
     @staticmethod
     def from_dict(obj):
@@ -83,6 +86,8 @@ class KubernetesExecutorConfig:
             node_selectors=namespaced.get('node_selectors', None),
             affinity=namespaced.get('affinity', None),
             annotations=namespaced.get('annotations', {}),
+            volumes=namespaced.get('volumes', []),
+            volume_mounts=namespaced.get('volume_mounts', []),
         )
 
     def as_dict(self):
@@ -97,6 +102,8 @@ class KubernetesExecutorConfig:
             'node_selectors': self.node_selectors,
             'affinity': self.affinity,
             'annotations': self.annotations,
+            'volumes': self.volumes,
+            'volume_mounts': self.volume_mounts,
         }
 
 
@@ -600,8 +607,14 @@ class KubernetesExecutor(BaseExecutor, LoggingMixin):
             last_resource_version, session=self._session)
 
         if not self.task_queue.empty():
-            key, command, kube_executor_config = self.task_queue.get()
-            self.kube_scheduler.run_next((key, command, kube_executor_config))
+            task = self.task_queue.get()
+
+            try:
+                self.kube_scheduler.run_next(task)
+            except ApiException:
+                self.log.exception('ApiException when attempting ' +
+                                   'to run task, re-queueing.')
+                self.task_queue.put(task)
 
     def _change_state(self, key, state, pod_id):
         if state != State.RUNNING:

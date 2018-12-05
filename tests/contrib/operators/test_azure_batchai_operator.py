@@ -60,15 +60,13 @@ class TestAzureBatchAIOperator(unittest.TestCase):
     @mock.patch('airflow.contrib.operators.azure_batchai_operator.AzureBatchAIHook')
     def test_execute(self, abai_mock):
         abai_mock.return_value.get_state_exitcode.return_value = 'Terminated', 0
-        with mock.patch('azure.mgmt.resource.ResourceManagementClient.resource_groups') as mock_rg:
-            mock_rg.create_or_update.return_value = 'Terminated', 0
         self.batch = AzureBatchAIOperator('azure_batchai_default',
                                           'batch-ai-test-rg',
                                           'batch-ai-workspace',
                                           'batch-ai-cluster',
                                           'eastus',
                                           'auto',
-                                          environment_variables={},
+                                          environment_variables={'USERNAME': 'azureuser', 'PASSWORD': 'azurepass'},
                                           volumes=[],
                                           task_id='test_operator')
         self.batch.execute()
@@ -88,7 +86,7 @@ class TestAzureBatchAIOperator(unittest.TestCase):
                                           'batch-ai-cluster',
                                           'eastus',
                                           'auto',
-                                          environment_variables={},
+                                          environment_variables={'USERNAME': 'azureuser', 'PASSWORD': 'azurepass'},
                                           volumes=[],
                                           task_id='test_operator')
 

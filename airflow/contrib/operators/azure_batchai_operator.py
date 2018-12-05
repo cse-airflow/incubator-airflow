@@ -57,7 +57,7 @@ class AzureBatchAIOperator(BaseOperator):
     :param scale_type: either "manual" or "auto" based on desired scale settings
     :type scale_type: str
     :param: environment_variables: key,value pairs containing environment variables
-        which will be passed to the running container, including selected username and password
+        which will be passed to the running cluster, must include username and password
     :type: environment_variables: dict
     :param: volumes: list of volumes to be mounted to the cluster.
         Currently only Azure Fileshares are supported.
@@ -130,8 +130,8 @@ class AzureBatchAIOperator(BaseOperator):
 
             vm_configuration = VirtualMachineConfiguration(image_reference=image_reference)
 
-            username = os.environ['USERNAME']
-            password = os.environ['PASSWORD']
+            username = self.environment_variables['USERNAME']
+            password = self.environment_variables['PASSWORD']
 
             user_account_settings = UserAccountSettings(
                 admin_user_name=username,

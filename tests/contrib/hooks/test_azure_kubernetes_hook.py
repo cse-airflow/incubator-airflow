@@ -77,7 +77,7 @@ class TestAzureKubernetesHook(unittest.TestCase):
         with self.assertRaises(AirflowException) as ex:
             AzureKubernetesServiceHook(conn_id=None)
 
-        self.assertEqual(ex.exception.message, "Unrecognised extension for key file.")
+        self.assertEqual(str(ex.exception), "Unrecognised extension for key file.")
 
 
 if __name__ == '__main__':

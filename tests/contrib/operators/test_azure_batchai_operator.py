@@ -66,7 +66,10 @@ class TestAzureBatchAIOperator(unittest.TestCase):
                                           'batch-ai-cluster',
                                           'eastus',
                                           'auto',
-                                          environment_variables={'USERNAME': 'azureuser', 'PASSWORD': 'azurepass'},
+                                          environment_variables={
+                                              'USERNAME': 'azureuser',
+                                              'PASSWORD': 'azurepass'
+                                          },
                                           volumes=[],
                                           task_id='test_operator')
         self.batch.execute()
@@ -86,7 +89,10 @@ class TestAzureBatchAIOperator(unittest.TestCase):
                                           'batch-ai-cluster',
                                           'eastus',
                                           'auto',
-                                          environment_variables={'USERNAME': 'azureuser', 'PASSWORD': 'azurepass'},
+                                          environment_variables={
+                                              'USERNAME': 'azureuser',
+                                              'PASSWORD': 'azurepass'
+                                          },
                                           volumes=[],
                                           task_id='test_operator')
 

@@ -101,7 +101,7 @@ class AzureBatchAIOperator(BaseOperator):
         batch_ai_hook = AzureBatchAIHook(self.bai_conn_id)
 
         try:
-            self.log.info("Starting Batch AI cluster with offer %s and sku %s mem",
+            self.log.info("Starting Batch AI cluster with offer %s and sku %s",
                           self.offer, self.sku)
 
             username = self.environment_variables['USERNAME']
@@ -115,7 +115,11 @@ class AzureBatchAIOperator(BaseOperator):
                 vm_size='STANDARD_NC6',
                 user_account_settings=user_account_settings,
                 location=self.location,
-                vm_priority='dedicated')
+                vm_priority='dedicated',
+                scale_settings=None,
+                virtual_machine_configuration=None,
+                node_setup=None,
+                subnet=None)
 
             batch_ai_hook.create(self.resource_group,
                                  self.workspace_name,
@@ -135,7 +139,7 @@ class AzureBatchAIOperator(BaseOperator):
             raise AirflowException("Could not start batch ai cluster")
 
         finally:
-            self.log.info("Deleting batch ai cluster")
+            self.log.info("Deleting Batch AI cluster")
             try:
                 batch_ai_hook.delete(self.resource_group, self.workspace_name, self.cluster_name)
             except Exception:

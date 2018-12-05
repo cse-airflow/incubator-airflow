@@ -18,8 +18,6 @@
 # under the License.
 #
 
-import os
-
 from time import sleep
 
 from airflow.contrib.hooks.azure_batchai_hook import (AzureBatchAIHook)

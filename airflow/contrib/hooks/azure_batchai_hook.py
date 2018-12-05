@@ -26,23 +26,21 @@ from azure.mgmt.batchai import BatchAIManagementClient
 
 class AzureBatchAIHook(BaseHook):
 
-    def __init__(self, azure_batchai_conn_id='azure_batchai_default'):
+    def __init__(self, azure_batchai_conn_id='azure_batchai_default', config_data=None):
         self.conn_id = azure_batchai_conn_id
         self.connection = self.get_conn()
-        self.configData = None
+        self.configData = config_data
         self.credentials = None
         self.subscription_id = None
 
     def get_conn(self):
         conn = self.get_connection(self.conn_id)
-        configuration.load_test_config()
         key_path = conn.extra_dejson.get('key_path', False)
         if key_path:
             if key_path.endswith('.json'):
                 self.log.info('Getting connection using a JSON key file.')
-                self.configData = load_json(self, key_path)
-                # return get_client_from_auth_file(BatchAIManagementClient,
-                #                                  key_path)
+                return get_client_from_auth_file(BatchAIManagementClient,
+                                                 key_path)
             else:
                 raise AirflowException('Unrecognised extension for key file.')
 
@@ -54,14 +52,14 @@ class AzureBatchAIHook(BaseHook):
                                                  key_path)
             else:
                 raise AirflowException('Unrecognised extension for key file.')
+
         self.credentials = ServicePrincipalCredentials(
             client_id=self.configData['clientId'],
             secret=self.configData['clientSecret'],
             tenant=self.configData['tenantId']
         )
 
-        subscription_id = self.configData['subscriptionId']
-        return BatchAIManagementClient(credentials, str(subscription_id))
+        return BatchAIManagementClient(self.credentials, self.configData['subscriptionId'])
 
     def create(self, resource_group, workspace_name, cluster_name, location, parameters):
         self.log.info("creating workspace.....")

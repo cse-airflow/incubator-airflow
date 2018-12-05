@@ -18,13 +18,11 @@
 # under the License.
 #
 
-import sys
 import unittest
 
 from airflow import configuration
 from airflow.exceptions import AirflowException
 from airflow.contrib.operators.azure_batchai_operator import AzureBatchAIOperator
-from airflow.contrib.hooks.azure_batchai_hook import AzureBatchAIHook
 
 try:
     from unittest import mock
@@ -37,40 +35,33 @@ except ImportError:
 CONFIG_DATA = {
     "clientId": "Id",
     "clientSecret": "secret",
-    "subscriptionId": "subscription",
-    "tenantId": "tenant"
+    "tenantId": "tenant",
+    "subscription_id": "subscription",
 }
 
 
 class TestAzureBatchAIOperator(unittest.TestCase):
 
-    # @mock.patch('airflow.contrib.hooks.azure_batchai_hook.load_json')
-    # @mock.patch('airflow.contrib.hooks.azure_batchai_hook.ServicePrincipalCredentials')
-    # def test_conn(self, mock_json, mock_service):
-    #     from azure.mgmt.batchai import BatchAIManagementClient
-    #     mock_json.return_value = CONFIG_DATA
-    #     hook = AzureBatchAIHook(conn_id='azure_batchai_default')
-    #     self.assertEqual(hook.conn_id, 'azure_batchai_default')
-    #     self.assertIsInstance(hook.connection, BatchAIManagementClient)
-
     @mock.patch('airflow.contrib.operators.azure_batchai_operator.AzureBatchAIHook')
     def setUp(self, azure_batchai_hook_mock):
         configuration.load_test_config()
 
-        self.azure_batchai_hook_mock = azure_batchai_hook_mock
+        self.azure_batchai_hook_mock = azure_batchai_hook_mock(CONFIG_DATA)
         self.batch = AzureBatchAIOperator('azure_batchai_default',
                                           'batch-ai-test-rg',
                                           'batch-ai-workspace',
                                           'batch-ai-cluster',
                                           'eastus',
                                           'auto',
-                                          environment_variables={},
+                                          environment_variables=CONFIG_DATA,
                                           volumes=[],
                                           task_id='test_operator')
 
     @mock.patch('airflow.contrib.operators.azure_batchai_operator.AzureBatchAIHook')
     def test_execute(self, abai_mock):
-        abai_mock.return_value.get_state_exitcode.return_value = "Terminated", 0
+        abai_mock.return_value.get_state_exitcode.return_value = 'Terminated', 0
+        with mock.patch('azure.mgmt.resource.ResourceManagementClient.resource_groups') as mock_rg:
+            mock_rg.create_or_update.return_value = 'Terminated', 0
         self.batch = AzureBatchAIOperator('azure_batchai_default',
                                           'batch-ai-test-rg',
                                           'batch-ai-workspace',

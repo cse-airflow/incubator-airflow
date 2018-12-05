@@ -27,10 +27,6 @@ from airflow.contrib.hooks.azure_batchai_hook import (AzureBatchAIHook)
 from airflow.exceptions import AirflowException, AirflowTaskTimeout
 from airflow.models import BaseOperator
 
-from azure.mgmt.resource import ResourceManagementClient
-
-from azure.common.client_factory import get_client_from_auth_file
-
 from azure.mgmt.batchai.models import (ClusterCreateParameters,
                                        ManualScaleSettings,
                                        AutoScaleSettings,
@@ -81,6 +77,7 @@ class AzureBatchAIOperator(BaseOperator):
                 'my-workspace-name-{{ ds }}',
                 'my-cluster-name',
                 'westeurope',
+                'auto_scale',
                 {'USERNAME': '{{ ds }}',
                  'PASSWORD': '{{ ds }}},
                 task_id='start_container'
@@ -109,10 +106,6 @@ class AzureBatchAIOperator(BaseOperator):
 
     def execute(self):
         batch_ai_hook = AzureBatchAIHook(self.bai_conn_id)
-
-        resource_client = get_client_from_auth_file(ResourceManagementClient)
-        resource_group_params = {'location': self.location}
-        resource_client.resource_groups.create_or_update(self.resource_group, resource_group_params)
 
         try:
             self.log.info("Starting Batch AI cluster with offer %d and sku %d mem",

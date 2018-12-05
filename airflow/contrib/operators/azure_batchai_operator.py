@@ -26,11 +26,6 @@ from airflow.exceptions import AirflowException, AirflowTaskTimeout
 from airflow.models import BaseOperator
 
 from azure.mgmt.batchai.models import (ClusterCreateParameters,
-                                       ManualScaleSettings,
-                                       AutoScaleSettings,
-                                       ScaleSettings,
-                                       VirtualMachineConfiguration,
-                                       ImageReference,
                                        UserAccountSettings)
 
 from msrestazure.azure_exceptions import CloudError
@@ -109,25 +104,6 @@ class AzureBatchAIOperator(BaseOperator):
             self.log.info("Starting Batch AI cluster with offer %s and sku %s mem",
                           self.offer, self.sku)
 
-            auto_scale_settings = AutoScaleSettings(minimum_node_count=0,
-                                                    maximum_node_count=10,
-                                                    initial_node_count=0)
-
-            manual_scale_settings = ManualScaleSettings(target_node_count=0,
-                                                        node_deallocation_option='requeue')
-
-            if self.scale_type == 'manual':
-                scale_settings = ScaleSettings(manual=manual_scale_settings)
-            else:
-                scale_settings = ScaleSettings(auto_scale=auto_scale_settings)
-
-            image_reference = ImageReference(publisher=self.publisher,
-                                             offer=self.offer,
-                                             sku=self.sku,
-                                             version=self.version)
-
-            vm_configuration = VirtualMachineConfiguration(image_reference=image_reference)
-
             username = self.environment_variables['USERNAME']
             password = self.environment_variables['PASSWORD']
 
@@ -137,12 +113,7 @@ class AzureBatchAIOperator(BaseOperator):
 
             parameters = ClusterCreateParameters(
                 vm_size='STANDARD_NC6',
-                user_account_settings=user_account_settings,
-                vm_priority='dedicated',
-                scale_settings=scale_settings,
-                virtual_machine_configuration=vm_configuration,
-                node_setup=None,
-                subnet=None)
+                user_account_settings=user_account_settings)
 
             batch_ai_hook.create(self.resource_group,
                                  self.workspace_name,

@@ -105,7 +105,7 @@ class BigQueryOperator(BaseOperator):
 
     @apply_defaults
     def __init__(self,
-                 sql=None,
+                 sql,
                  destination_dataset_table=False,
                  write_disposition='WRITE_EMPTY',
                  allow_large_results=False,
@@ -149,10 +149,6 @@ class BigQueryOperator(BaseOperator):
         if api_resource_configs is None:
             self.api_resource_configs = {}
         self.cluster_fields = cluster_fields
-
-        if self.sql is None:
-            raise TypeError('{} missing 1 required positional '
-                            'argument: `sql`'.format(self.task_id))
 
     def execute(self, context):
         if self.bq_cursor is None:
@@ -408,7 +404,7 @@ class BigQueryCreateExternalTableOperator(BaseOperator):
     :type delegate_to: str
     :param src_fmt_configs: configure optional fields specific to the source format
     :type src_fmt_configs: dict
-    :param labels a dictionary containing labels for the table, passed to BigQuery
+    :param labels: a dictionary containing labels for the table, passed to BigQuery
     :type labels: dict
     """
     template_fields = ('bucket', 'source_objects',
@@ -501,9 +497,10 @@ class BigQueryCreateExternalTableOperator(BaseOperator):
 
 
 class BigQueryDeleteDatasetOperator(BaseOperator):
-    """"
+    """
     This operator deletes an existing dataset from your Project in Big query.
     https://cloud.google.com/bigquery/docs/reference/rest/v2/datasets/delete
+
     :param project_id: The project id of the dataset.
     :type project_id: str
     :param dataset_id: The dataset to be deleted.
@@ -552,7 +549,7 @@ class BigQueryDeleteDatasetOperator(BaseOperator):
 
 
 class BigQueryCreateEmptyDatasetOperator(BaseOperator):
-    """"
+    """
     This operator is used to create new dataset for your Project in Big query.
     https://cloud.google.com/bigquery/docs/reference/rest/v2/datasets#resource
 

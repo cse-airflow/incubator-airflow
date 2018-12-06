@@ -161,6 +161,35 @@ Logging
 Airflow can be configured to read and write task logs in Azure Blob Storage.
 See :ref:`write-logs-azure`.
 
+Azure CosmosDB 
+'''''''''''''''''' 
+ 
+AzureCosmosDBHook communicates via the Azure Cosmos library. Make sure that a 
+Airflow connection of type `azure_cosmos` exists. Authorization can be done by supplying a 
+login (=Endpoint uri), password (=secret key) and extra fields database_name and collection_name to specify the  
+default database and collection to use (see connection `azure_cosmos_default` for an example). 
+ 
+- :ref:`AzureCosmosDBHook`: Interface with Azure CosmosDB. 
+- :ref:`AzureCosmosInsertDocumentOperator`: Simple operator to insert document into CosmosDB. 
+- :ref:`AzureCosmosDocumentSensor`: Simple sensor to detect document existence in CosmosDB. 
+
+.. AzureCosmosDBHook: 
+ 
+AzureCosmosDBHook 
+""""""""" 
+ 
+.. autoclass:: airflow.contrib.hooks.azure_cosmos_hook.AzureCosmosDBHook 
+ 
+AzureCosmosInsertDocumentOperator 
+""""""""" 
+ 
+.. autoclass:: airflow.contrib.operators.azure_cosmos_insertdocument_operator.AzureCosmosInsertDocumentOperator 
+ 
+AzureCosmosDocumentSensor 
+""""""""" 
+ 
+.. autoclass:: airflow.contrib.sensors.azure_cosmos_sensor.AzureCosmosDocumentSensor 
+
 Azure Data Lake
 '''''''''''''''
 
@@ -573,6 +602,8 @@ Cloud SQL Operators
 - :ref:`CloudSqlInstanceDatabasePatchOperator` : updates a database inside a Cloud
   SQL instance.
 - :ref:`CloudSqlInstanceDeleteOperator` : delete a Cloud SQL instance.
+- :ref:`CloudSqlInstanceExportOperator` : exports data from a Cloud SQL instance.
+- :ref:`CloudSqlInstanceImportOperator` : imports data into a Cloud SQL instance.
 - :ref:`CloudSqlInstanceCreateOperator` : create a new Cloud SQL instance.
 - :ref:`CloudSqlInstancePatchOperator` : patch a Cloud SQL instance.
 - :ref:`CloudSqlQueryOperator` : run query in a Cloud SQL instance.
@@ -604,6 +635,20 @@ CloudSqlInstanceDeleteOperator
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: airflow.contrib.operators.gcp_sql_operator.CloudSqlInstanceDeleteOperator
+
+.. _CloudSqlInstanceExportOperator:
+
+CloudSqlInstanceExportOperator
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: airflow.contrib.operators.gcp_sql_operator.CloudSqlInstanceExportOperator
+
+.. _CloudSqlInstanceImportOperator:
+
+CloudSqlInstanceImportOperator
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: airflow.contrib.operators.gcp_sql_operator.CloudSqlInstanceImportOperator
 
 .. _CloudSqlInstanceCreateOperator:
 
@@ -658,11 +703,11 @@ Compute Engine Operators
 - :ref:`GceInstanceGroupManagerUpdateTemplateOperator` : patch the Instance Group Manager,
   replacing source Instance Template URL with the destination one.
 
-The operators have common base operator:
+The operators have the common base operator:
 
 .. autoclass:: airflow.contrib.operators.gcp_compute_operator.GceBaseOperator
 
-They also use :ref:`GceHook` hook to communicate with Google Cloud Platform.
+They also use :ref:`GceHook` to communicate with Google Cloud Platform.
 
 .. _GceInstanceStartOperator:
 
@@ -719,7 +764,7 @@ Cloud Functions Operators
 
 .. autoclass:: airflow.contrib.operators.gcp_operator.GCP
 
-They also use :ref:`GcfHook` hook to communicate with Google Cloud Platform.
+They also use :ref:`GcfHook` to communicate with Google Cloud Platform.
 
 .. _GcfFunctionDeployOperator:
 

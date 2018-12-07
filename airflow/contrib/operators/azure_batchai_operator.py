@@ -111,56 +111,6 @@ class AzureBatchAIOperator(BaseOperator):
                 admin_user_name=username,
                 admin_user_password=password)
 
-            
-            auto_scale_settings = AutoScaleSettings(
-                minimum_node_count=0,
-                maximum_node_count=10,
-                initial_node_count=0)
-
-            scale_settings = ScaleSettings(
-                auto_scale=auto_scale_settings)
-
-            image_reference = ImageReference(
-                publisher=self.publisher,
-                offer=self.offer,
-                sku=self.sku,
-                version=self.version)
-
-            vm_configuration = VirtualMachineConfiguration(
-                image_reference=image_reference)
-
-            username=os.environ['USERNAME'],
-            password=os.environ['PASSWORD']
-
-            user_account_settings = UserAccountSettings(
-                admin_user_name=username,
-                admin_user_password=password)
-
-            
-            auto_scale_settings = AutoScaleSettings(
-                minimum_node_count=0,
-                maximum_node_count=10,
-                initial_node_count=0)
-
-            scale_settings = ScaleSettings(
-                auto_scale=auto_scale_settings)
-
-            image_reference = ImageReference(
-                publisher=self.publisher,
-                offer=self.offer,
-                sku=self.sku,
-                version=self.version)
-
-            vm_configuration = VirtualMachineConfiguration(
-                image_reference=image_reference)
-
-            username=os.environ['USERNAME'],
-            password=os.environ['PASSWORD']
-
-            user_account_settings = UserAccountSettings(
-                admin_user_name=username,
-                admin_user_password=password)
-
             parameters = ClusterCreateParameters(
                 vm_size='STANDARD_NC6',
                 user_account_settings=user_account_settings,

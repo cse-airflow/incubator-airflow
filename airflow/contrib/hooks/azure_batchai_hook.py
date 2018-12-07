@@ -39,7 +39,6 @@ class AzureBatchAIHook(BaseHook):
         if key_path:
             if key_path.endswith('.json'):
                 self.log.info('Getting connection using a JSON key file.')
-                print key_path
                 return get_client_from_auth_file(BatchAIManagementClient,
                                                  key_path)
             else:
@@ -49,16 +48,15 @@ class AzureBatchAIHook(BaseHook):
             key_path = os.environ.get('AZURE_AUTH_LOCATION')
             if key_path.endswith('.json'):
                 self.log.info('Getting connection using a JSON key file.')
-                print key_path
                 return get_client_from_auth_file(BatchAIManagementClient,
                                                  key_path)
             else:
                 raise AirflowException('Unrecognised extension for key file.')
-        
-        credentials = ServicePrincipalCredentials(
-            client_id=conn.login,
-            secret=conn.password,
-            tenant=conn.extra_dejson['tenantId']
+
+        self.credentials = ServicePrincipalCredentials(
+            client_id=self.configData['clientId'],
+            secret=self.configData['clientSecret'],
+            tenant=self.configData['tenantId']
         )
 
         return BatchAIManagementClient(self.credentials, self.configData['subscriptionId'])
@@ -71,12 +69,10 @@ class AzureBatchAIHook(BaseHook):
 
         self.log.info("creating cluster.....")
         self.connection.clusters._create_initial(resource_group,
-                                          workspace_name,
-                                          cluster_name,
-                                          parameters)
+                                                 workspace_name,
+                                                 cluster_name,
+                                                 parameters)
 
-        print "cluster created"
-                                                        
     def update(self, resource_group, workspace_name, cluster_name):
         self.log.info("updating cluster.....")
         self.connection.clusters.update(resource_group,

@@ -279,6 +279,10 @@ def initdb(rbac=False):
             extra='{"tenant": "<TENANT>", "account_name": "<ACCOUNTNAME>" }'))
     merge_conn(
         models.Connection(
+            conn_id='azure_batchai_default', conn_type='azure_batch_ai',
+            extra='{"key_path": "<AZURE_AUTH_LOCATION>" }'))
+    merge_conn(
+        models.Connection(
             conn_id='cassandra_default', conn_type='cassandra',
             host='cassandra', port=9042))
 

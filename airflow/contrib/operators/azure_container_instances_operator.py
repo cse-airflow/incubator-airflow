@@ -19,11 +19,13 @@
 
 from time import sleep
 
-from airflow.contrib.hooks.azure_container_hook import (AzureContainerInstanceHook,
-                                                        AzureContainerRegistryHook,
-                                                        AzureContainerVolumeHook)
+from airflow.contrib.hooks.azure_container_instance_hook import AzureContainerInstanceHook
+from airflow.contrib.hooks.azure_container_registry_hook import AzureContainerRegistryHook
+from airflow.contrib.hooks.azure_container_volume_hook import AzureContainerVolumeHook
+
 from airflow.exceptions import AirflowException, AirflowTaskTimeout
 from airflow.models import BaseOperator
+from airflow.utils.decorators import apply_defaults
 
 from azure.mgmt.containerinstance.models import (EnvironmentVariable,
                                                  VolumeMount,
@@ -32,6 +34,12 @@ from azure.mgmt.containerinstance.models import (EnvironmentVariable,
                                                  Container,
                                                  ContainerGroup)
 from msrestazure.azure_exceptions import CloudError
+
+
+DEFAULT_ENVIRONMENT_VARIABLES = {}
+DEFAULT_VOLUMES = []
+DEFAULT_MEMORY_IN_GB = 2.0
+DEFAULT_CPU = 1.0
 
 
 class AzureContainerInstancesOperator(BaseOperator):
@@ -89,21 +97,22 @@ class AzureContainerInstancesOperator(BaseOperator):
     template_fields = ('name', 'environment_variables')
     template_ext = tuple()
 
+    @apply_defaults
     def __init__(self, ci_conn_id, registry_conn_id, resource_group, name, image, region,
-                 environment_variables={}, volumes=[], memory_in_gb=2.0, cpu=1.0,
+                 environment_variables=None, volumes=None, memory_in_gb=None, cpu=None,
                  *args, **kwargs):
+        super(AzureContainerInstancesOperator, self).__init__(*args, **kwargs)
+
         self.ci_conn_id = ci_conn_id
         self.resource_group = resource_group
         self.name = name
         self.image = image
         self.region = region
         self.registry_conn_id = registry_conn_id
-        self.environment_variables = environment_variables
-        self.volumes = volumes
-        self.memory_in_gb = memory_in_gb
-        self.cpu = cpu
-
-        super(AzureContainerInstancesOperator, self).__init__(*args, **kwargs)
+        self.environment_variables = environment_variables or DEFAULT_ENVIRONMENT_VARIABLES
+        self.volumes = volumes or DEFAULT_VOLUMES
+        self.memory_in_gb = memory_in_gb or DEFAULT_MEMORY_IN_GB
+        self.cpu = cpu or DEFAULT_CPU
 
     def execute(self, context):
         ci_hook = AzureContainerInstanceHook(self.ci_conn_id)

@@ -239,25 +239,33 @@ The AzureContainerRegistryHook requires a host/login/password to be defined in t
 - :ref:`AzureContainerRegistryHook` : Wrapper around a ACR
 - :ref:`AzureContainerVolumeHook` : Wrapper around Container Volumes
 
+.. _AzureContainerInstancesOperator:
+
 AzureContainerInstancesOperator
 """""""""""""""""""""""""""""""
 
 .. autoclass:: airflow.contrib.operators.azure_container_instances_operator.AzureContainerInstancesOperator
 
+.. _AzureContainerInstanceHook:
+
 AzureContainerInstanceHook
 """"""""""""""""""""""""""
 
-.. autoclass:: airflow.contrib.hooks.azure_container_hook.AzureContainerInstanceHook
+.. autoclass:: airflow.contrib.hooks.azure_container_instance_hook.AzureContainerInstanceHook
+
+.. _AzureContainerRegistryHook:
 
 AzureContainerRegistryHook
 """"""""""""""""""""""""""
 
-.. autoclass:: airflow.contrib.hooks.azure_container_hook.AzureContainerRegistryHook
+.. autoclass:: airflow.contrib.hooks.azure_container_registry_hook.AzureContainerRegistryHook
+
+.. _AzureContainerVolumeHook:
 
 AzureContainerVolumeHook
 """"""""""""""""""""""""
 
-.. autoclass:: airflow.contrib.hooks.azure_container_hook.AzureContainerVolumeHook
+.. autoclass:: airflow.contrib.hooks.azure_container_volume_hook.AzureContainerVolumeHook
 
 
 .. _AWS:

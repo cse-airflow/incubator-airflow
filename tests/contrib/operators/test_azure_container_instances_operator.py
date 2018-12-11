@@ -19,8 +19,7 @@
 #
 
 from airflow.exceptions import AirflowException
-from airflow.contrib.operators.azure_container_instances_operator import (
-    AzureContainerInstancesOperator)
+from airflow.contrib.operators.azure_container_instances_operator import AzureContainerInstancesOperator
 
 import unittest
 
@@ -40,9 +39,12 @@ class TestACIOperator(unittest.TestCase):
     def test_execute(self, aci_mock):
         aci_mock.return_value.get_state_exitcode.return_value = "Terminated", 0
 
-        aci = AzureContainerInstancesOperator(None, None,
-                                              'resource-group', 'container-name',
-                                              'container-image', 'region',
+        aci = AzureContainerInstancesOperator(ci_conn_id=None,
+                                              registry_conn_id=None,
+                                              resource_group='resource-group',
+                                              name='container-name',
+                                              image='container-image',
+                                              region='region',
                                               task_id='task')
         aci.execute(None)
 
@@ -69,9 +71,12 @@ class TestACIOperator(unittest.TestCase):
     def test_execute_with_failures(self, aci_mock):
         aci_mock.return_value.get_state_exitcode.return_value = "Terminated", 1
 
-        aci = AzureContainerInstancesOperator(None, None,
-                                              'resource-group', 'container-name',
-                                              'container-image', 'region',
+        aci = AzureContainerInstancesOperator(ci_conn_id=None,
+                                              registry_conn_id=None,
+                                              resource_group='resource-group',
+                                              name='container-name',
+                                              image='container-image',
+                                              region='region',
                                               task_id='task')
         with self.assertRaises(AirflowException):
             aci.execute(None)
@@ -86,9 +91,12 @@ class TestACIOperator(unittest.TestCase):
         aci_mock.return_value.get_messages.return_value = ["test", "messages"]
         aci_mock.return_value.get_logs.return_value = ["test", "logs"]
 
-        aci = AzureContainerInstancesOperator(None, None,
-                                              'resource-group', 'container-name',
-                                              'container-image', 'region',
+        aci = AzureContainerInstancesOperator(ci_conn_id=None,
+                                              registry_conn_id=None,
+                                              resource_group='resource-group',
+                                              name='container-name',
+                                              image='container-image',
+                                              region='region',
                                               task_id='task')
         aci.execute(None)
 

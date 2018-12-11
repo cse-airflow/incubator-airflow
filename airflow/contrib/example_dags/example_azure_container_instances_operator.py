@@ -39,14 +39,14 @@ dag = DAG(
 )
 
 t1 = AzureContainerInstancesOperator(
-    'azure_container_instances_default',
-    None,                               # Registry connection user
-    'resource-group',
-    'aci-test-{{ ds }}',
-    'hello-world',
-    'WestUS2',
-    {},                                 # Environment Variables
-    [],                                 # Volumes
+    ci_conn_id='azure_container_instances_default',
+    registry_conn_id=None,
+    resource_group='resource-group',
+    name='aci-test-{{ ds }}',
+    image='hello-world',
+    region='WestUS2',
+    environment_variables={},
+    volumes=[],
     memory_in_gb=4.0,
     cpu=1.0,
     task_id='start_container',

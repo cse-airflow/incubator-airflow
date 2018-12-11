@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,9 +22,6 @@ from azure.common.client_factory import get_client_from_auth_file
 from azure.common.credentials import ServicePrincipalCredentials
 
 from azure.mgmt.containerinstance import ContainerInstanceManagementClient
-from azure.mgmt.containerinstance.models import (ImageRegistryCredential,
-                                                 Volume,
-                                                 AzureFileVolume)
 
 
 class AzureContainerInstanceHook(BaseHook):
@@ -93,37 +89,3 @@ class AzureContainerInstanceHook(BaseHook):
 
     def delete(self, resource_group, name):
         self.connection.container_groups.delete(resource_group, name)
-
-
-class AzureContainerRegistryHook(BaseHook):
-
-    def __init__(self, conn_id='azure_registry'):
-        self.conn_id = conn_id
-        self.connection = self.get_conn()
-
-    def get_conn(self):
-        conn = self.get_connection(self.conn_id)
-        return ImageRegistryCredential(conn.host, conn.login, conn.password)
-
-
-class AzureContainerVolumeHook(BaseHook):
-
-    def __init__(self, wasb_conn_id='wasb_default'):
-        self.conn_id = wasb_conn_id
-
-    def get_storagekey(self):
-        conn = self.get_connection(self.conn_id)
-        service_options = conn.extra_dejson
-
-        if 'connection_string' in service_options:
-            for keyvalue in service_options['connection_string'].split(";"):
-                key, value = keyvalue.split("=", 1)
-                if key == "AccountKey":
-                    return value
-        return conn.password
-
-    def get_file_volume(self, mount_name, share_name,
-                        storage_account_name, read_only=False):
-        return Volume(mount_name,
-                      AzureFileVolume(share_name, storage_account_name,
-                                      read_only, self.get_storagekey()))

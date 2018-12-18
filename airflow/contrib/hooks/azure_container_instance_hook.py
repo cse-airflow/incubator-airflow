@@ -25,6 +25,19 @@ from azure.mgmt.containerinstance import ContainerInstanceManagementClient
 
 
 class AzureContainerInstanceHook(BaseHook):
+    """
+    A hook to communicate with Azure Container Instances.
+
+    This hook requires a service principal in order to work.
+    After creating this service principal
+    (Azure Active Directory/App Registrations), you need to fill in the
+    client_id (Application ID) as login, the generated password as password,
+    and tenantId and subscriptionId in the extra's field as a json.
+
+    :param conn_id: connection id of a service principal which will be used
+        to start the container instance
+    :type conn_id: str
+    """
 
     def __init__(self, conn_id='azure_default'):
         self.conn_id = conn_id
@@ -60,11 +73,32 @@ class AzureContainerInstanceHook(BaseHook):
         return ContainerInstanceManagementClient(credentials, str(subscription_id))
 
     def create_or_update(self, resource_group, name, container_group):
+        """
+        Create a new container group
+
+        :param resource_group: the name of the resource group
+        :type resource_group: str
+        :param name: the name of the container group
+        :type name: str
+        :param container_group: the name of the container group
+        :type container_group: azure.mgmt.containerinstance.models.ContainerGroup
+        """
         self.connection.container_groups.create_or_update(resource_group,
                                                           name,
                                                           container_group)
 
-    def get_state_exitcode(self, resource_group, name):
+    def get_state_exitcode_details(self, resource_group, name):
+        """
+        Get the state and exitcode of a container group
+
+        :param resource_group: the name of the resource group
+        :type resource_group: str
+        :param name: the name of the container group
+        :type name: str
+        :return: A tuple with the state, exitcode, and details.
+        If the exitcode is unknown 0 is returned.
+        :rtype: tuple(state,exitcode,details)
+        """
         response = self.connection.container_groups.get(resource_group,
                                                         name,
                                                         raw=True).response.json()
@@ -72,9 +106,21 @@ class AzureContainerInstanceHook(BaseHook):
         instance_view = containers[0]['properties'].get('instanceView', {})
         current_state = instance_view.get('currentState', {})
 
-        return current_state.get('state'), current_state.get('exitCode', 0)
+        return (current_state.get('state'),
+                current_state.get('exitCode', 0),
+                current_state.get('detailStatus', ''))
 
     def get_messages(self, resource_group, name):
+        """
+        Get the messages of a container group
+
+        :param resource_group: the name of the resource group
+        :type resource_group: str
+        :param name: the name of the container group
+        :type name: str
+        :return: A list of the event messages
+        :rtype: list<str>
+        """
         response = self.connection.container_groups.get(resource_group,
                                                         name,
                                                         raw=True).response.json()
@@ -84,8 +130,42 @@ class AzureContainerInstanceHook(BaseHook):
         return [event['message'] for event in instance_view.get('events', [])]
 
     def get_logs(self, resource_group, name, tail=1000):
+        """
+        Get the tail from logs of a container group
+
+        :param resource_group: the name of the resource group
+        :type resource_group: str
+        :param name: the name of the container group
+        :type name: str
+        :param tail: the size of the tail
+        :type tail: int
+        :return: A list of log messages
+        :rtype: list<str>
+        """
         logs = self.connection.container.list_logs(resource_group, name, name, tail=tail)
         return logs.content.splitlines(True)
 
     def delete(self, resource_group, name):
+        """
+        Delete a container group
+
+        :param resource_group: the name of the resource group
+        :type resource_group: str
+        :param name: the name of the container group
+        :type name: str
+        """
         self.connection.container_groups.delete(resource_group, name)
+
+    def exists(self, resource_group, name):
+        """
+        Test if a container group exists
+
+        :param resource_group: the name of the resource group
+        :type resource_group: str
+        :param name: the name of the container group
+        :type name: str
+        """
+        for container in self.connection.container_groups.list_by_resource_group(resource_group):
+            if container.name == name:
+                return True
+        return False

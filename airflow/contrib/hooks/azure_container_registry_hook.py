@@ -22,6 +22,13 @@ from azure.mgmt.containerinstance.models import ImageRegistryCredential
 
 
 class AzureContainerRegistryHook(BaseHook):
+    """
+    A hook to communicate with a Azure Container Registry.
+
+    :param conn_id: connection id of a service principal which will be used
+        to start the container instance
+    :type conn_id: str
+    """
 
     def __init__(self, conn_id='azure_registry'):
         self.conn_id = conn_id

@@ -23,6 +23,13 @@ from azure.mgmt.containerinstance.models import (Volume,
 
 
 class AzureContainerVolumeHook(BaseHook):
+    """
+    A hook which wraps an Azure Volume.
+
+    :param wasb_conn_id: connection id of a Azure storage account of
+    which file shares should be mounted
+    :type wasb_conn_id: str
+    """
 
     def __init__(self, wasb_conn_id='wasb_default'):
         self.conn_id = wasb_conn_id

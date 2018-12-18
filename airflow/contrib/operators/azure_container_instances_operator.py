@@ -72,6 +72,8 @@ class AzureContainerInstancesOperator(BaseOperator):
     :type: memory_in_gb: double
     :param: cpu: the number of cpus to allocate to this container
     :type: cpu: double
+    :param: command: the command to run inside the container
+    :type: command: str
 
     :Example:
 
@@ -90,6 +92,7 @@ class AzureContainerInstancesOperator(BaseOperator):
                   True),],
                 memory_in_gb=14.0,
                 cpu=4.0,
+                command='python /app/myfile.py',
                 task_id='start_container'
             )
     """
@@ -100,7 +103,7 @@ class AzureContainerInstancesOperator(BaseOperator):
     @apply_defaults
     def __init__(self, ci_conn_id, registry_conn_id, resource_group, name, image, region,
                  environment_variables=None, volumes=None, memory_in_gb=None, cpu=None,
-                 *args, **kwargs):
+                 command=None, remove_on_error=True, fail_if_exists=True, *args, **kwargs):
         super(AzureContainerInstancesOperator, self).__init__(*args, **kwargs)
 
         self.ci_conn_id = ci_conn_id
@@ -113,9 +116,17 @@ class AzureContainerInstancesOperator(BaseOperator):
         self.volumes = volumes or DEFAULT_VOLUMES
         self.memory_in_gb = memory_in_gb or DEFAULT_MEMORY_IN_GB
         self.cpu = cpu or DEFAULT_CPU
+        self.command = command
+        self.remove_on_error = remove_on_error
+        self.fail_if_exists = fail_if_exists
 
     def execute(self, context):
         ci_hook = AzureContainerInstanceHook(self.ci_conn_id)
+
+        if self.fail_if_exists:
+            self.log.info("Testing if container group already exists")
+            if ci_hook.exists(self.resource_group, self.name):
+                raise AirflowException("Container group exists")
 
         if self.registry_conn_id:
             registry_hook = AzureContainerRegistryHook(self.registry_conn_id)
@@ -139,6 +150,7 @@ class AzureContainerInstancesOperator(BaseOperator):
                                                 read_only))
             volume_mounts.append(VolumeMount(mount_name, mount_path, read_only))
 
+        exit_code = 1
         try:
             self.log.info("Starting container group with %.1f cpu %.1f mem",
                           self.cpu, self.memory_in_gb)
@@ -151,6 +163,7 @@ class AzureContainerInstancesOperator(BaseOperator):
                 name=self.name,
                 image=self.image,
                 resources=resources,
+                command=self.command,
                 environment_variables=environment_variables,
                 volume_mounts=volume_mounts)
 
@@ -164,7 +177,7 @@ class AzureContainerInstancesOperator(BaseOperator):
 
             ci_hook.create_or_update(self.resource_group, self.name, container_group)
 
-            self.log.info("Container group started")
+            self.log.info("Container group started %s/%s", self.resource_group, self.name)
 
             exit_code = self._monitor_logging(ci_hook, self.resource_group, self.name)
 
@@ -178,11 +191,12 @@ class AzureContainerInstancesOperator(BaseOperator):
             raise AirflowException("Could not start container group")
 
         finally:
-            self.log.info("Deleting container group")
-            try:
-                ci_hook.delete(self.resource_group, self.name)
-            except Exception:
-                self.log.exception("Could not delete container group")
+            if exit_code == 0 or self.remove_on_error:
+                self.log.info("Deleting container group")
+                try:
+                    ci_hook.delete(self.resource_group, self.name)
+                except Exception:
+                    self.log.exception("Could not delete container group")
 
     def _monitor_logging(self, ci_hook, resource_group, name):
         last_state = None
@@ -190,24 +204,25 @@ class AzureContainerInstancesOperator(BaseOperator):
         last_line_logged = None
         for _ in range(43200):  # roughly 12 hours
             try:
-                state, exit_code = ci_hook.get_state_exitcode(resource_group, name)
+                state, exit_code, detail_status = ci_hook.get_state_exitcode_details(resource_group, name)
                 if state != last_state:
                     self.log.info("Container group state changed to %s", state)
                     last_state = state
 
-                if state == "Terminated":
-                    return exit_code
-
                 messages = ci_hook.get_messages(resource_group, name)
                 last_message_logged = self._log_last(messages, last_message_logged)
 
-                if state == "Running":
+                if state in ["Running", "Terminated"]:
                     try:
                         logs = ci_hook.get_logs(resource_group, name)
                         last_line_logged = self._log_last(logs, last_line_logged)
                     except CloudError as err:
                         self.log.exception("Exception while getting logs from "
                                            "container instance, retrying...")
+
+                if state == "Terminated":
+                    self.log.info("Container exited with detail_status %s", detail_status)
+                    return exit_code
 
             except CloudError as err:
                 if 'ResourceNotFound' in str(err):

@@ -37,7 +37,8 @@ class TestACIOperator(unittest.TestCase):
     @mock.patch("airflow.contrib.operators."
                 "azure_container_instances_operator.AzureContainerInstanceHook")
     def test_execute(self, aci_mock):
-        aci_mock.return_value.get_state_exitcode.return_value = "Terminated", 0
+        aci_mock.return_value.get_state_exitcode_details.return_value = "Terminated", 0, "test"
+        aci_mock.return_value.exists.return_value = False
 
         aci = AzureContainerInstancesOperator(ci_conn_id=None,
                                               registry_conn_id=None,
@@ -69,7 +70,8 @@ class TestACIOperator(unittest.TestCase):
     @mock.patch("airflow.contrib.operators."
                 "azure_container_instances_operator.AzureContainerInstanceHook")
     def test_execute_with_failures(self, aci_mock):
-        aci_mock.return_value.get_state_exitcode.return_value = "Terminated", 1
+        aci_mock.return_value.get_state_exitcode_details.return_value = "Terminated", 1, "test"
+        aci_mock.return_value.exists.return_value = False
 
         aci = AzureContainerInstancesOperator(ci_conn_id=None,
                                               registry_conn_id=None,
@@ -86,10 +88,11 @@ class TestACIOperator(unittest.TestCase):
     @mock.patch("airflow.contrib.operators."
                 "azure_container_instances_operator.AzureContainerInstanceHook")
     def test_execute_with_messages_logs(self, aci_mock):
-        aci_mock.return_value.get_state_exitcode.side_effect = [("Running", 0),
-                                                                ("Terminated", 0)]
+        aci_mock.return_value.get_state_exitcode_details.side_effect = [("Running", 0, "test"),
+                                                                        ("Terminated", 0, "test")]
         aci_mock.return_value.get_messages.return_value = ["test", "messages"]
         aci_mock.return_value.get_logs.return_value = ["test", "logs"]
+        aci_mock.return_value.exists.return_value = False
 
         aci = AzureContainerInstancesOperator(ci_conn_id=None,
                                               registry_conn_id=None,
@@ -101,9 +104,9 @@ class TestACIOperator(unittest.TestCase):
         aci.execute(None)
 
         self.assertEqual(aci_mock.return_value.create_or_update.call_count, 1)
-        self.assertEqual(aci_mock.return_value.get_state_exitcode.call_count, 2)
-        self.assertEqual(aci_mock.return_value.get_messages.call_count, 1)
-        self.assertEqual(aci_mock.return_value.get_logs.call_count, 1)
+        self.assertEqual(aci_mock.return_value.get_state_exitcode_details.call_count, 2)
+        self.assertEqual(aci_mock.return_value.get_messages.call_count, 2)
+        self.assertEqual(aci_mock.return_value.get_logs.call_count, 2)
 
         self.assertEqual(aci_mock.return_value.delete.call_count, 1)
 

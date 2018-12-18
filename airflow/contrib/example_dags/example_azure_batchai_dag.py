@@ -50,4 +50,4 @@ dummy = DummyOperator(
     dag=dag
 )
 
-dummy.set_upstream(batch_ai_node)
+batch_ai_node >> dummy

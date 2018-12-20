@@ -80,7 +80,7 @@ class AzureContainerInstanceHook(BaseHook):
         :type resource_group: str
         :param name: the name of the container group
         :type name: str
-        :param container_group: the name of the container group
+        :param container_group: the properties of the container group
         :type container_group: azure.mgmt.containerinstance.models.ContainerGroup
         """
         self.connection.container_groups.create_or_update(resource_group,
@@ -99,16 +99,16 @@ class AzureContainerInstanceHook(BaseHook):
         If the exitcode is unknown 0 is returned.
         :rtype: tuple(state,exitcode,details)
         """
+        current_state = self._get_instance_view(resource_group, name).current_state
+        return (current_state.state,
+                current_state.exit_code,
+                current_state.detail_status)
+
+    def _get_instance_view(self, resource_group, name):
         response = self.connection.container_groups.get(resource_group,
                                                         name,
-                                                        raw=True).response.json()
-        containers = response['properties']['containers']
-        instance_view = containers[0]['properties'].get('instanceView', {})
-        current_state = instance_view.get('currentState', {})
-
-        return (current_state.get('state'),
-                current_state.get('exitCode', 0),
-                current_state.get('detailStatus', ''))
+                                                        raw=False)
+        return response.containers[0].instance_view.current_state
 
     def get_messages(self, resource_group, name):
         """
@@ -121,13 +121,9 @@ class AzureContainerInstanceHook(BaseHook):
         :return: A list of the event messages
         :rtype: list<str>
         """
-        response = self.connection.container_groups.get(resource_group,
-                                                        name,
-                                                        raw=True).response.json()
-        containers = response['properties']['containers']
-        instance_view = containers[0]['properties'].get('instanceView', {})
+        instance_view = self._get_instance_view(resource_group, name)
 
-        return [event['message'] for event in instance_view.get('events', [])]
+        return [event.message for event in instance_view.events]
 
     def get_logs(self, resource_group, name, tail=1000):
         """

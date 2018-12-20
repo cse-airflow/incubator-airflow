@@ -47,6 +47,8 @@ class AzureContainerVolumeHook(BaseHook):
 
     def get_file_volume(self, mount_name, share_name,
                         storage_account_name, read_only=False):
-        return Volume(mount_name,
-                      AzureFileVolume(share_name, storage_account_name,
-                                      read_only, self.get_storagekey()))
+        return Volume(name=mount_name,
+                      azure_file=AzureFileVolume(share_name=share_name,
+                                                 storage_account_name=storage_account_name,
+                                                 read_only=read_only,
+                                                 storage_account_key=self.get_storagekey()))

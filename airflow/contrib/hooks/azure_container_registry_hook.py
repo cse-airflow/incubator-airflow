@@ -36,4 +36,4 @@ class AzureContainerRegistryHook(BaseHook):
 
     def get_conn(self):
         conn = self.get_connection(self.conn_id)
-        return ImageRegistryCredential(conn.host, conn.login, conn.password)
+        return ImageRegistryCredential(server=conn.host, username=conn.login, password=conn.password)

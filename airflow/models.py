@@ -813,12 +813,9 @@ class Connection(Base, LoggingMixin):
             elif self.conn_type == 'azure_batch_ai':
                 from airflow.contrib.hooks.azure_batchai_hook import AzureBatchAIHook
                 return AzureBatchAIHook(azure_batchai_conn_id=self.conn_id)
-<<<<<<< HEAD
-=======
             elif self.conn_type == 'azure_cosmos':
                 from airflow.contrib.hooks.azure_cosmos_hook import AzureCosmosDBHook
                 return AzureCosmosDBHook(azure_cosmos_conn_id=self.conn_id)
->>>>>>> azure-batchai-operator-master
             elif self.conn_type == 'cassandra':
                 from airflow.contrib.hooks.cassandra_hook import CassandraHook
                 return CassandraHook(cassandra_conn_id=self.conn_id)

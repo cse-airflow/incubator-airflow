@@ -209,6 +209,20 @@ AzureDataLakeHook
 
 .. autoclass:: airflow.contrib.hooks.azure_data_lake_hook.AzureDataLakeHook
 
+.. _AzureDataLakeStorageListOperator:
+
+AzureDataLakeStorageListOperator
+""""""""""""""""""""""""""""""""
+
+.. autoclass:: airflow.contrib.operators.adls_list_operator.AzureDataLakeStorageListOperator
+
+.. _AdlsToGoogleCloudStorageOperator:
+
+AdlsToGoogleCloudStorageOperator
+""""""""""""""""""""""""""""""""
+
+.. autoclass:: airflow.contrib.operators.adls_to_gcs.AdlsToGoogleCloudStorageOperator
+
 Azure Batch AI
 ''''''''''''''
  Azure Batch AI provides a method to run a docker container without having to worry

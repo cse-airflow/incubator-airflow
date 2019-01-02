@@ -49,7 +49,7 @@ class AzureBatchAIHook(BaseHook):
                 if key_path.endswith('.json'):
                     self.log.info('Getting connection using a JSON key file.')
                     return get_client_from_auth_file(BatchAIManagementClient,
-                                                    key_path)
+                                                     key_path)
                 else:
                     raise AirflowException('Unrecognised extension for key file.')
 
@@ -58,7 +58,7 @@ class AzureBatchAIHook(BaseHook):
                 if key_path.endswith('.json'):
                     self.log.info('Getting connection using a JSON key file.')
                     return get_client_from_auth_file(BatchAIManagementClient,
-                                                    key_path)
+                                                     key_path)
                 else:
                     raise AirflowException('Unrecognised extension for key file.')
 
@@ -67,7 +67,7 @@ class AzureBatchAIHook(BaseHook):
                 secret=self.configData['clientSecret'],
                 tenant=self.configData['tenantId']
             )
-        except:AirflowException:
+        except AirflowException:
             # No connection found
             pass
 

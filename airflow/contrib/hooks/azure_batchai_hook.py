@@ -25,6 +25,14 @@ from azure.mgmt.batchai import BatchAIManagementClient
 
 
 class AzureBatchAIHook(BaseHook):
+    """
+    Interact with Azure Batch AI
+
+    :param azure_batchai_conn_id: Reference to the Azure Batch AI connection
+    :type azure_batchai_conn_id: str
+    :param config_data: JSON Object with credential and subscription information
+    :type config_data: str
+    """
 
     def __init__(self, azure_batchai_conn_id='azure_batchai_default', config_data=None):
         self.conn_id = azure_batchai_conn_id
@@ -34,30 +42,34 @@ class AzureBatchAIHook(BaseHook):
         self.subscription_id = None
 
     def get_conn(self):
-        conn = self.get_connection(self.conn_id)
-        key_path = conn.extra_dejson.get('key_path', False)
-        if key_path:
-            if key_path.endswith('.json'):
-                self.log.info('Getting connection using a JSON key file.')
-                return get_client_from_auth_file(BatchAIManagementClient,
-                                                 key_path)
-            else:
-                raise AirflowException('Unrecognised extension for key file.')
+        try:
+            conn = self.get_connection(self.conn_id)
+            key_path = conn.extra_dejson.get('key_path', False)
+            if key_path:
+                if key_path.endswith('.json'):
+                    self.log.info('Getting connection using a JSON key file.')
+                    return get_client_from_auth_file(BatchAIManagementClient,
+                                                    key_path)
+                else:
+                    raise AirflowException('Unrecognised extension for key file.')
 
-        if os.environ.get('AZURE_AUTH_LOCATION'):
-            key_path = os.environ.get('AZURE_AUTH_LOCATION')
-            if key_path.endswith('.json'):
-                self.log.info('Getting connection using a JSON key file.')
-                return get_client_from_auth_file(BatchAIManagementClient,
-                                                 key_path)
-            else:
-                raise AirflowException('Unrecognised extension for key file.')
+            elif os.environ.get('AZURE_AUTH_LOCATION'):
+                key_path = os.environ.get('AZURE_AUTH_LOCATION')
+                if key_path.endswith('.json'):
+                    self.log.info('Getting connection using a JSON key file.')
+                    return get_client_from_auth_file(BatchAIManagementClient,
+                                                    key_path)
+                else:
+                    raise AirflowException('Unrecognised extension for key file.')
 
-        self.credentials = ServicePrincipalCredentials(
-            client_id=self.configData['clientId'],
-            secret=self.configData['clientSecret'],
-            tenant=self.configData['tenantId']
-        )
+            self.credentials = ServicePrincipalCredentials(
+                client_id=self.configData['clientId'],
+                secret=self.configData['clientSecret'],
+                tenant=self.configData['tenantId']
+            )
+        except:AirflowException:
+            # No connection found
+            pass
 
         return BatchAIManagementClient(self.credentials, self.configData['subscriptionId'])
 

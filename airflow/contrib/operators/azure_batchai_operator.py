@@ -65,15 +65,15 @@ class AzureBatchAIOperator(BaseOperator):
     :type: version: str
      :Example:
      >>>  a = AzureBatchAIOperator(
-                'azure_service_principal',
-                'my-resource-group',
-                'my-workspace-name-{{ ds }}',
-                'my-cluster-name',
-                'westeurope',
-                'auto_scale',
-                {'USERNAME': '{{ ds }}',
+                bai_conn_id='azure_service_principal',
+                resource_group='my-resource-group',
+                workspace_name='my-workspace-name-{{ ds }}',
+                cluster_name='my-cluster-name',
+                location='westeurope',
+                scale_type'auto_scale',
+                environment_variables={'USERNAME': '{{ ds }}',
                  'PASSWORD': '{{ ds }}},
-                task_id='start_container'
+                volumes=[],
             )
     """
 
@@ -150,6 +150,7 @@ class AzureBatchAIOperator(BaseOperator):
         last_message_logged = None
         last_line_logged = None
         for _ in range(43200):
+            # roughly 12 hours
             try:
                 state, exit_code = batch_ai_hook.get_state_exitcode(self.resource_group,
                                                                     self.workspace_name,

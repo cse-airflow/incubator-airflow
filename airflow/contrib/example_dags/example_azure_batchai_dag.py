@@ -17,6 +17,11 @@
 # specific language governing permissions and limitations
 # under the License.
 
+"""
+This is an example DAG to highlight usage of the AzureBatchAIOperator to run a
+Batch AI Cluster on Azure
+"""
+
 import airflow
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.contrib.operators.azure_batchai_operator import AzureBatchAIOperator
@@ -29,16 +34,16 @@ args = {
 }
 
 dag = DAG(
-    dag_id='example_batchai_operator',
+    dag_id='example_azure_batchai_operator',
     default_args=args,
     schedule_interval="@daily")
 
 batch_ai_node = AzureBatchAIOperator(
-    'azure_batchai_default',
-    'batch-ai-test-rg',
-    'batch-ai-workspace-name',
-    'batch-ai-cluster-name',
-    'WestUS2',
+    bai_conn_id='azure_batchai_default',
+    resource_group='batch-ai-test-rg',
+    workspace_name='batch-ai-workspace-name',
+    cluster_name='batch-ai-cluster-name',
+    location='WestUS2',
     environment_variables={},
     volumes=[],
     task_id='run_this_first',
@@ -46,7 +51,6 @@ batch_ai_node = AzureBatchAIOperator(
 
 dummy = DummyOperator(
     task_id='join',
-    trigger_rule='one_success',
     dag=dag
 )
 

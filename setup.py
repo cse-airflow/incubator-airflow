@@ -260,8 +260,13 @@ devel_hadoop = devel_minreq + hive + hdfs + webhdfs + kerberos
 devel_all = (sendgrid + devel + all_dbs + doc + samba + slack + crypto + oracle +
              docker + ssh + kubernetes + celery + redis + gcp_api +
              datadog + zendesk + jdbc + ldap + kerberos + password + webhdfs + jenkins +
+<<<<<<< HEAD
              druid + pinot + segment + snowflake + elasticsearch +
              atlas + azure + aws)
+=======
+             druid + pinot + segment + snowflake + elasticsearch + azure_data_lake + azure_cosmos +
+             azure_kubernetes_service + atlas + azure_container_instances)
+>>>>>>> [AIRFLOW-3282] Implement Azure Kubernetes Service Operator (#20)
 
 # Snakebite & Google Cloud Dataflow are not Python 3 compatible :'(
 if PY3:
@@ -335,8 +340,16 @@ def do_setup():
             'all_dbs': all_dbs,
             'atlas': atlas,
             'async': async_packages,
+<<<<<<< HEAD
             'aws': aws,
             'azure': azure,
+=======
+            'azure_blob_storage': azure_blob_storage,
+            'azure_data_lake': azure_data_lake,
+            'azure_kubernetes_service': azure_kubernetes_service,
+            'azure_cosmos': azure_cosmos,
+            'azure_container_instances': azure_container_instances,
+>>>>>>> [AIRFLOW-3282] Implement Azure Kubernetes Service Operator (#20)
             'cassandra': cassandra,
             'celery': celery,
             'cgroups': cgroups,

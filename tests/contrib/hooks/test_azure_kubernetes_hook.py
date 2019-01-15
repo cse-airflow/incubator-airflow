@@ -23,7 +23,7 @@ import unittest
 
 from airflow import configuration
 from airflow.exceptions import AirflowException
-from airflow import models
+from airflow.models.connection import Connection
 from airflow.contrib.hooks.azure_kubernetes_hook import AzureKubernetesServiceHook
 from airflow.utils import db
 
@@ -47,7 +47,7 @@ class TestAzureKubernetesHook(unittest.TestCase):
     def setUp(self):
         configuration.load_test_config()
         db.merge_conn(
-            models.Connection(
+            Connection(
                 conn_id='azure_default',
                 extra=json.dumps({"key_path": "azureauth.json"})
             )

@@ -22,8 +22,9 @@ import unittest
 
 from mock import Mock, patch, mock_open
 
-from airflow import configuration, models
+from airflow import configuration
 from airflow.contrib.hooks.imap_hook import ImapHook
+from airflow.models.connection import Connection
 from airflow.utils import db
 
 imaplib_string = 'airflow.contrib.hooks.imap_hook.imaplib'
@@ -56,7 +57,7 @@ class TestImapHook(unittest.TestCase):
         configuration.load_test_config()
 
         db.merge_conn(
-            models.Connection(
+            Connection(
                 conn_id='imap_default',
                 host='imap_server_address',
                 login='imap_user',
@@ -99,7 +100,7 @@ class TestImapHook(unittest.TestCase):
 
         with ImapHook() as imap_hook:
             has_attachment_in_inbox = imap_hook.has_mail_attachment(
-                name='test(\d+).csv',
+                name=r'test(\d+).csv',
                 check_regex=True
             )
 
@@ -111,7 +112,7 @@ class TestImapHook(unittest.TestCase):
 
         with ImapHook() as imap_hook:
             has_attachment_in_inbox = imap_hook.has_mail_attachment(
-                name='test_(\d+).csv',
+                name=r'test_(\d+).csv',
                 check_regex=True
             )
 
@@ -141,7 +142,7 @@ class TestImapHook(unittest.TestCase):
 
         with ImapHook() as imap_hook:
             attachments_in_inbox = imap_hook.retrieve_mail_attachments(
-                name='test(\d+).csv',
+                name=r'test(\d+).csv',
                 check_regex=True
             )
 
@@ -153,7 +154,7 @@ class TestImapHook(unittest.TestCase):
 
         with ImapHook() as imap_hook:
             attachments_in_inbox = imap_hook.retrieve_mail_attachments(
-                name='test_(\d+).csv',
+                name=r'test_(\d+).csv',
                 check_regex=True
             )
 
@@ -200,7 +201,7 @@ class TestImapHook(unittest.TestCase):
 
         with ImapHook() as imap_hook:
             imap_hook.download_mail_attachments(
-                name='test(\d+).csv',
+                name=r'test(\d+).csv',
                 local_output_directory='test_directory',
                 check_regex=True
             )
@@ -215,7 +216,7 @@ class TestImapHook(unittest.TestCase):
 
         with ImapHook() as imap_hook:
             imap_hook.download_mail_attachments(
-                name='test_(\d+).csv',
+                name=r'test_(\d+).csv',
                 local_output_directory='test_directory',
                 check_regex=True
             )

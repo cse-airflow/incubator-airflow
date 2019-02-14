@@ -19,6 +19,7 @@
 
 from airflow.contrib.hooks.azure_kubernetes_hook import AzureKubernetesServiceHook
 from airflow.models import BaseOperator
+from airflow.utils.decorators import apply_defaults
 
 from azure.mgmt.containerservice.models import ContainerServiceLinuxProfile
 from azure.mgmt.containerservice.models import ContainerServiceServicePrincipalProfile
@@ -30,10 +31,7 @@ from azure.mgmt.containerservice.models import ManagedClusterAgentPoolProfile
 
 from airflow.contrib.utils.aks_utils import \
     is_valid_ssh_rsa_public_key, get_poller_result, get_public_key, get_default_dns_prefix
-from knack.log import get_logger
 from msrestazure.azure_exceptions import CloudError
-
-logger = get_logger(__name__)
 
 
 class AzureKubernetesOperator(BaseOperator):
@@ -91,7 +89,7 @@ class AzureKubernetesOperator(BaseOperator):
             tags=None
         )
     """
-
+    @apply_defaults
     def __init__(self, ci_conn_id, resource_group, name, ssh_key_value,
                  dns_name_prefix=None,
                  location=None,
@@ -145,9 +143,9 @@ class AzureKubernetesOperator(BaseOperator):
 
         # Check if the resource group exists
         if ci_hook.check_resource(ci_hook.credentials, ci_hook.subscription_id, self.resource_group):
-            logger.info("Resource group already existing:" + self.resource_group)
+            self.log.info("Resource group already existing:" + self.resource_group)
         else:
-            logger.info("Creating resource {0}".format(self.resource_group))
+            self.log.info("Creating resource {0}".format(self.resource_group))
             created_resource_group = ci_hook.create_resource(
                 ci_hook.credentials, ci_hook.subscription_id, self.resource_group, {
                     'location': self.location})
@@ -187,14 +185,13 @@ class AzureKubernetesOperator(BaseOperator):
             service_principal_profile=service_profile)
 
         try:
-            logger.info("Checking if the AKS instance {0} is present".format(self.name))
+            self.log.info("Checking if the AKS instance {0} is present".format(self.name))
             response = containerservice.managed_clusters.get(self.resource_group, self.name)
-            logger.info("Response : {0}".format(response))
-            logger.info("AKS instance : {0} found".format(response.name))
+            self.log.info("AKS instance : %s found", response.name)
             return response
         except CloudError:
             poller = containerservice.managed_clusters.create_or_update(
                 resource_group_name=self.resource_group, resource_name=self.name, parameters=mc)
             response = get_poller_result(self, poller)
-            logger.info("AKS instance created {0}".format(self.name))
+            self.log.info("AKS instance created %s", self.name)
             return response

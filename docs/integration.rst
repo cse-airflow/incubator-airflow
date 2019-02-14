@@ -102,7 +102,6 @@ login (=Client ID), password (=Client Secret) and extra fields tenant (Tenant) a
 
 :class:`airflow.contrib.hooks.azure_data_lake_hook.AzureDataLakeHook`
     Interface with Azure Data Lake.
-<<<<<<< HEAD
 
 :class:`airflow.contrib.operators.adls_list_operator.AzureDataLakeStorageListOperator`
     Lists the files located in a specified Azure Data Lake path.
@@ -110,15 +109,6 @@ login (=Client ID), password (=Client Secret) and extra fields tenant (Tenant) a
 :class:`airflow.contrib.operators.adls_to_gcs.AdlsToGoogleCloudStorageOperator`
     Copies files from an Azure Data Lake path to a Google Cloud Storage bucket.
 
-=======
-
-:class:`airflow.contrib.operators.adls_list_operator.AzureDataLakeStorageListOperator`
-    Lists the files located in a specified Azure Data Lake path.
-
-:class:`airflow.contrib.operators.adls_to_gcs.AdlsToGoogleCloudStorageOperator`
-    Copies files from an Azure Data Lake path to a Google Cloud Storage bucket.
-
->>>>>>> [AIRFLOW-3810] Remove duplicate autoclass directive (#4656)
 
 Azure Container Instances
 '''''''''''''''''''''''''
@@ -133,7 +123,6 @@ The AzureContainerRegistryHook requires a host/login/password to be defined in t
 
 :class:`airflow.contrib.hooks.azure_container_volume_hook.AzureContainerVolumeHook`
     Interface with Azure Container Volumes
-<<<<<<< HEAD
 
 :class:`airflow.contrib.operators.azure_container_instances_operator.AzureContainerInstancesOperator`
     Start/Monitor a new ACI.
@@ -144,18 +133,6 @@ The AzureContainerRegistryHook requires a host/login/password to be defined in t
 :class:`airflow.contrib.hooks.azure_container_registry_hook.AzureContainerRegistryHook`
     Interface with ACR
 
-=======
-
-:class:`airflow.contrib.operators.azure_container_instances_operator.AzureContainerInstancesOperator`
-    Start/Monitor a new ACI.
-
-:class:`airflow.contrib.hooks.azure_container_instance_hook.AzureContainerInstanceHook`
-    Wrapper around a single ACI.
-
-:class:`airflow.contrib.hooks.azure_container_registry_hook.AzureContainerRegistryHook`
-    Interface with ACR
-
->>>>>>> [AIRFLOW-3810] Remove duplicate autoclass directive (#4656)
 
 
 .. _AWS:
@@ -164,18 +141,13 @@ Azure Kubernetes Service
 '''''''''''''''''''''''''
 Azure Kubernetes Service (AKS) simplifies the deployment and operations of Kubernetes and enables you to dynamically scale your application infrastructure.
 The AzureKubernetesServiceHook requires a service principal. The credentials for this principal can either be defined in the extra field `key_path`, as an 
-environment variable named `AZURE_AUTH_LOCATION`.
+environment variable named `AIRFLOW_CONN_AZURE_DEFAULT`.
 
-- :ref:`AzureKubernetesOperator` : Start new AKS.
-- :ref:`AzureKubernetesServiceHook` : Wrapper around a aks.
+:class: `airflow.contrib.operators.aks_operator.AzureKubernetesOperator`
+   Start a new AKS
 
-AzureKubernetesOperator
-"""""""""""""""""""""""""""""""
- .. autoclass:: airflow.contrib.operators.aks_operator.AzureKubernetesOperator
-
-AzureKubernetesServiceHook
-""""""""""""""""""""""""""
- .. autoclass:: airflow.contrib.hooks.azure_kubernetes_hook.AzureKubernetesServiceHook
+:class: `airflow.contrib.hooks.azure_kubernetes_hook.AzureKubernetesServiceHook`
+   Interface with Azure Kubernetes
 
 AWS: Amazon Web Services
 ------------------------
@@ -204,7 +176,6 @@ AWS S3
 
 :class:`airflow.hooks.S3_hook.S3Hook`
     Interface with AWS S3.
-<<<<<<< HEAD
 
 :class:`airflow.operators.s3_file_transform_operator.S3FileTransformOperator`
     Copies data from a source S3 location to a temporary location on the local filesystem.
@@ -218,21 +189,6 @@ AWS S3
 :class:`airflow.contrib.operators.s3_to_gcs_transfer_operator.S3ToGoogleCloudStorageTransferOperator`
     Syncs an S3 bucket with a Google Cloud Storage bucket using the GCP Storage Transfer Service.
 
-=======
-
-:class:`airflow.operators.s3_file_transform_operator.S3FileTransformOperator`
-    Copies data from a source S3 location to a temporary location on the local filesystem.
-
-:class:`airflow.contrib.operators.s3_list_operator.S3ListOperator`
-    Lists the files matching a key prefix from a S3 location.
-
-:class:`airflow.contrib.operators.s3_to_gcs_operator.S3ToGoogleCloudStorageOperator`
-    Syncs an S3 location with a Google Cloud Storage bucket.
-
-:class:`airflow.contrib.operators.s3_to_gcs_transfer_operator.S3ToGoogleCloudStorageTransferOperator`
-    Syncs an S3 bucket with a Google Cloud Storage bucket using the GCP Storage Transfer Service.
-
->>>>>>> [AIRFLOW-3810] Remove duplicate autoclass directive (#4656)
 :class:`airflow.operators.s3_to_hive_operator.S3ToHiveTransfer`
     Moves data from S3 to Hive. The operator downloads a file from S3, stores the file locally before loading it into a Hive table.
 
@@ -361,7 +317,6 @@ BigQuery
 
 :class:`airflow.contrib.operators.bigquery_check_operator.BigQueryCheckOperator`
     Performs checks against a SQL query that will return a single row with different values.
-<<<<<<< HEAD
 
 :class:`airflow.contrib.operators.bigquery_check_operator.BigQueryIntervalCheckOperator`
     Checks that the values of metrics given as SQL expressions are within a certain tolerance of the ones from days_back before.
@@ -399,45 +354,6 @@ BigQuery
 
 They also use :class:`airflow.contrib.hooks.bigquery_hook.BigQueryHook` to communicate with Google Cloud Platform.
 
-=======
-
-:class:`airflow.contrib.operators.bigquery_check_operator.BigQueryIntervalCheckOperator`
-    Checks that the values of metrics given as SQL expressions are within a certain tolerance of the ones from days_back before.
-
-:class:`airflow.contrib.operators.bigquery_check_operator.BigQueryValueCheckOperator`
-    Performs a simple value check using SQL code.
-
-:class:`airflow.contrib.operators.bigquery_get_data.BigQueryGetDataOperator`
-    Fetches the data from a BigQuery table and returns data in a python list
-
-:class:`airflow.contrib.operators.bigquery_operator.BigQueryCreateEmptyDatasetOperator`
-    Creates an empty BigQuery dataset.
-
-:class:`airflow.contrib.operators.bigquery_operator.BigQueryCreateEmptyTableOperator`
-    Creates a new, empty table in the specified BigQuery dataset optionally with schema.
-
-:class:`airflow.contrib.operators.bigquery_operator.BigQueryCreateExternalTableOperator`
-    Creates a new, external table in the dataset with the data in Google Cloud Storage.
-
-:class:`airflow.contrib.operators.bigquery_operator.BigQueryDeleteDatasetOperator`
-    Deletes an existing BigQuery dataset.
-
-:class:`airflow.contrib.operators.bigquery_operator.BigQueryOperator`
-    Executes BigQuery SQL queries in a specific BigQuery database.
-
-:class:`airflow.contrib.operators.bigquery_table_delete_operator.BigQueryTableDeleteOperator`
-    Deletes an existing BigQuery table.
-
-:class:`airflow.contrib.operators.bigquery_to_bigquery.BigQueryToBigQueryOperator`
-    Copy a BigQuery table to another BigQuery table.
-
-:class:`airflow.contrib.operators.bigquery_to_gcs.BigQueryToCloudStorageOperator`
-    Transfers a BigQuery table to a Google Cloud Storage bucket
-
-
-They also use :class:`airflow.contrib.hooks.bigquery_hook.BigQueryHook` to communicate with Google Cloud Platform.
-
->>>>>>> [AIRFLOW-3810] Remove duplicate autoclass directive (#4656)
 
 Cloud Spanner
 '''''''''''''
@@ -528,7 +444,6 @@ Compute Engine
 
 :class:`airflow.contrib.operators.gcp_compute_operator.GceInstanceStartOperator`
     start an existing Google Compute Engine instance.
-<<<<<<< HEAD
 
 :class:`airflow.contrib.operators.gcp_compute_operator.GceInstanceStopOperator`
     stop an existing Google Compute Engine instance.
@@ -545,24 +460,6 @@ Compute Engine
 
 The operators have the common base operator :class:`airflow.contrib.operators.gcp_compute_operator.GceBaseOperator`
 
-=======
-
-:class:`airflow.contrib.operators.gcp_compute_operator.GceInstanceStopOperator`
-    stop an existing Google Compute Engine instance.
-
-:class:`airflow.contrib.operators.gcp_compute_operator.GceSetMachineTypeOperator`
-    change the machine type for a stopped instance.
-
-:class:`airflow.contrib.operators.gcp_compute_operator.GceInstanceTemplateCopyOperator`
-    copy the Instance Template, applying specified changes.
-
-:class:`airflow.contrib.operators.gcp_compute_operator.GceInstanceGroupManagerUpdateTemplateOperator`
-    patch the Instance Group Manager, replacing source Instance Template URL with the destination one.
-
-
-The operators have the common base operator :class:`airflow.contrib.operators.gcp_compute_operator.GceBaseOperator`
-
->>>>>>> [AIRFLOW-3810] Remove duplicate autoclass directive (#4656)
 They also use :class:`airflow.contrib.hooks.gcp_compute_hook.GceHook` to communicate with Google Cloud Platform.
 
 
@@ -577,8 +474,6 @@ Cloud Functions
 
 
 They also use :class:`airflow.contrib.hooks.gcp_function_hook.GcfHook` to communicate with Google Cloud Platform.
-<<<<<<< HEAD
-=======
 
 
 Cloud DataFlow
@@ -586,17 +481,6 @@ Cloud DataFlow
 
 :class:`airflow.contrib.operators.dataflow_operator.DataFlowJavaOperator`
     launching Cloud Dataflow jobs written in Java.
->>>>>>> [AIRFLOW-3810] Remove duplicate autoclass directive (#4656)
-
-:class:`airflow.contrib.operators.dataflow_operator.DataflowTemplateOperator`
-    launching a templated Cloud DataFlow batch job.
-
-:class:`airflow.contrib.operators.dataflow_operator.DataFlowPythonOperator`
-    launching Cloud Dataflow jobs written in python.
-
-<<<<<<< HEAD
-:class:`airflow.contrib.operators.dataflow_operator.DataFlowJavaOperator`
-    launching Cloud Dataflow jobs written in Java.
 
 :class:`airflow.contrib.operators.dataflow_operator.DataflowTemplateOperator`
     launching a templated Cloud DataFlow batch job.
@@ -606,49 +490,6 @@ Cloud DataFlow
 
 
 They also use :class:`airflow.contrib.hooks.gcp_dataflow_hook.DataFlowHook` to communicate with Google Cloud Platform.
-=======
-
-They also use :class:`airflow.contrib.hooks.gcp_dataflow_hook.DataFlowHook` to communicate with Google Cloud Platform.
-
-.. _DataFlowJavaOperator:
-
-DataFlowJavaOperator
-^^^^^^^^^^^^^^^^^^^^
-
-.. code:: python
-
-    default_args = {
-        'owner': 'airflow',
-        'depends_on_past': False,
-        'start_date':
-            (2016, 8, 1),
-        'email': ['alex@vanboxel.be'],
-        'email_on_failure': False,
-        'email_on_retry': False,
-        'retries': 1,
-        'retry_delay': timedelta(minutes=30),
-        'dataflow_default_options': {
-            'project': 'my-gcp-project',
-            'zone': 'us-central1-f',
-            'stagingLocation': 'gs://bucket/tmp/dataflow/staging/',
-        }
-    }
-
-    dag = DAG('test-dag', default_args=default_args)
-
-    task = DataFlowJavaOperator(
-        gcp_conn_id='gcp_default',
-        task_id='normalize-cal',
-        jar='{{var.value.gcp_dataflow_base}}pipeline-ingress-cal-normalize-1.0.jar',
-        options={
-            'autoscalingAlgorithm': 'BASIC',
-            'maxNumWorkers': '50',
-            'start': '{{ds}}',
-            'partitionType': 'DAY'
-
-        },
-        dag=dag)
->>>>>>> [AIRFLOW-3810] Remove duplicate autoclass directive (#4656)
 
 
 Cloud DataProc
@@ -706,7 +547,6 @@ Cloud ML Engine
 
 :class:`airflow.contrib.operators.mlengine_operator.MLEngineBatchPredictionOperator`
     Start a Cloud ML Engine batch prediction job.
-<<<<<<< HEAD
 
 :class:`airflow.contrib.operators.mlengine_operator.MLEngineModelOperator`
     Manages a Cloud ML Engine model.
@@ -718,19 +558,6 @@ Cloud ML Engine
     Manages a Cloud ML Engine model version.
 
 
-=======
-
-:class:`airflow.contrib.operators.mlengine_operator.MLEngineModelOperator`
-    Manages a Cloud ML Engine model.
-
-:class:`airflow.contrib.operators.mlengine_operator.MLEngineTrainingOperator`
-    Start a Cloud ML Engine training job.
-
-:class:`airflow.contrib.operators.mlengine_operator.MLEngineVersionOperator`
-    Manages a Cloud ML Engine model version.
-
-
->>>>>>> [AIRFLOW-3810] Remove duplicate autoclass directive (#4656)
 They also use :class:`airflow.contrib.hooks.gcp_mlengine_hook.MLEngineHook` to communicate with Google Cloud Platform.
 
 

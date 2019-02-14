@@ -17,15 +17,11 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import sys
 import json
 import re
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
-
-from knack.log import get_logger
-logger = get_logger(__name__)
 
 
 def is_valid_ssh_rsa_public_key(openssh_pubkey):
@@ -62,7 +58,7 @@ def load_json(self, file_path):
             configData = json.load(configFile)
     except FileNotFoundError:
         print("Error: Expecting azurermconfig.json in current folder")
-        sys.exit()
+        raise
     return configData
 
 
@@ -75,11 +71,11 @@ def get_poller_result(self, poller, wait=5):
     try:
         delay = wait
         while not poller.done():
-            logger.info("Waiting for {0} sec".format(delay))
+            self.log.info("Waiting for {0} sec".format(delay))
             poller.wait(timeout=delay)
         return poller.result()
     except Exception as exc:
-        logger.info("exception here {0} ".format(exc))
+        self.log.info("exception here {0} ".format(exc))
         raise
 
 

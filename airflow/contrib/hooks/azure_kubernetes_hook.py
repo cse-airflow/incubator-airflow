@@ -26,7 +26,7 @@ from airflow.contrib.utils.aks_utils import load_json
 
 class AzureKubernetesServiceHook(BaseHook):
 
-    def __init__(self, conn_id=None):
+    def __init__(self, conn_id='azure_default'):
         self.conn_id = conn_id
         self.connection = self.get_conn()
         self.configData = None
@@ -47,8 +47,8 @@ class AzureKubernetesServiceHook(BaseHook):
                 else:
                     raise AirflowException('Unrecognised extension for key file.')
 
-        if os.environ.get('AZURE_AUTH_LOCATION'):
-            key_path = os.environ.get('AZURE_AUTH_LOCATION')
+        if os.environ.get('AIRFLOW_CONN_AZURE_DEFAULT'):
+            key_path = os.environ.get('AIRFLOW_CONN_AZURE_DEFAULT')
             if key_path.endswith('.json'):
                 self.log.info('Getting connection using a JSON key file.')
                 self.configData = load_json(self, key_path)

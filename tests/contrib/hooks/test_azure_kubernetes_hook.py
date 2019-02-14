@@ -46,6 +46,10 @@ CONFIG_DATA = {
 class TestAzureKubernetesHook(unittest.TestCase):
     def setUp(self):
         configuration.load_test_config()
+
+        self.conn = conn = mock.MagicMock()
+        self.conn.conn_id = 'azure_default'
+        self.conn.extra_dejson = {'key_path': 'test.json'}
         db.merge_conn(
             Connection(
                 conn_id='azure_default',
@@ -53,26 +57,34 @@ class TestAzureKubernetesHook(unittest.TestCase):
             )
         )
 
-    @mock.patch('airflow.contrib.hooks.azure_kubernetes_hook.load_json')
-    @mock.patch('airflow.contrib.hooks.azure_kubernetes_hook.ServicePrincipalCredentials')
-    def test_conn(self, mock_json, mock_service):
-        from azure.mgmt.containerservice import ContainerServiceClient
-        mock_json.return_value = CONFIG_DATA
-        hook = AzureKubernetesServiceHook(conn_id='azure_default')
-        self.assertEqual(hook.conn_id, 'azure_default')
-        self.assertIsInstance(hook.connection, ContainerServiceClient)
+        class AzureKubernetesUnitHook(AzureKubernetesServiceHook):
+
+            def get_conn(self):
+                return conn
+
+            def get_connection(self, connection_id):
+                return conn
+
+        self.test_hook = AzureKubernetesUnitHook(conn_id='azure_default')
 
     @mock.patch('airflow.contrib.hooks.azure_kubernetes_hook.load_json')
     @mock.patch('airflow.contrib.hooks.azure_kubernetes_hook.ServicePrincipalCredentials')
-    @mock.patch('os.environ.get', new={'AZURE_AUTH_LOCATION': 'azureauth.json'}.get, spec_set=True)
-    def test_conn_env(self, mock_json, mock_service):
+    def test_conn(self, mock_json, mock_service):
+        expected_connection = self.test_hook.get_conn()
+        mock_json.return_value = CONFIG_DATA
+        self.assertEqual(expected_connection.conn_id, 'azure_default')
+
+    @mock.patch('airflow.contrib.hooks.azure_kubernetes_hook.load_json')
+    @mock.patch('airflow.contrib.hooks.azure_kubernetes_hook.ServicePrincipalCredentials')
+    @mock.patch('os.environ.get', new={'AIRFLOW_CONN_AZURE_DEFAULT': 'azureauth.json'}.get, spec_set=True)
+    def test_no_conn_id(self, mock_json, mock_service):
         from azure.mgmt.containerservice import ContainerServiceClient
         mock_json.return_value = CONFIG_DATA
         hook = AzureKubernetesServiceHook(conn_id=None)
         self.assertEqual(hook.conn_id, None)
         self.assertIsInstance(hook.connection, ContainerServiceClient)
 
-    @mock.patch('os.environ.get', new={'AZURE_AUTH_LOCATION': 'azureauth.jpeg'}.get, spec_set=True)
+    @mock.patch('os.environ.get', new={'AIRFLOW_CONN_AZURE_DEFAULT': 'azureauth.jpeg'}.get, spec_set=True)
     def test_conn_with_failures(self):
         with self.assertRaises(AirflowException) as ex:
             AzureKubernetesServiceHook(conn_id=None)
